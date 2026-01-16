@@ -258,7 +258,7 @@ This research was funded by National Institutes of Health Director's Pioneer Awa
 
 # Data availability statement
 
-The simulated data for this study can be generated using code in the project repository: <https://github.com/StanfordHPDS/tte_estimation_medicare>. Additional upcoding, undercoding, and baseline data can be simulated using the upcoding package (<https://github.com/StanfordHPDS/upcoding>). In line with program policies, non-summarized All of Us survey data used to derive baseline co-occurring HCCs can be accessed via the All of Us Researcher Workbench only (<https://www.researchallofus.org/data-tools/workbench/>) and requires Registered Tier access. Code that was used for this project in the Researcher Workbench is in the above project repository.
+The simulated data for this study can be generated using code in the project repository: <https://github.com/StanfordHPDS/tte_estimation_medicare>. Additional upcoding, undercoding, and baseline data can be simulated using the upcoding package (<https://github.com/StanfordHPDS/upcoding>). In line with program policies, non-summarized version 7 All of Us survey data used to derive baseline co-occurring HCCs can be accessed by authorized users via the All of Us Researcher Workbench only (<https://www.researchallofus.org/data-tools/workbench/>) and requires Registered Tier access. Code that was used for this project in the Researcher Workbench is in the above project repository.
 
 # Supporting Information
 

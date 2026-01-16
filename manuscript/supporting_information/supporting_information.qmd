@@ -365,4 +365,8 @@ respondent_race |>
 
 ![**Within-monitoring period** $\boldsymbol{\psi}$ **estimates for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). For this HCC, individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded to varying degrees and individuals in the TM comparison group are upcoded 5% similarly. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure6.png)
 
+# Data availability statement 
+
+The simulated data for this study can be generated using code in the project repository: <https://github.com/StanfordHPDS/tte_estimation_medicare>. Additional upcoding, undercoding, and baseline data can be simulated using the upcoding package (<https://github.com/StanfordHPDS/upcoding>). In line with program policies, non-summarized version 7 All of Us survey data used to derive baseline co-occurring HCCs can be accessed by authorized users via the All of Us Researcher Workbench only (<https://www.researchallofus.org/data-tools/workbench/>) and requires Registered Tier access. Code that was used for this project in the Researcher Workbench is in the above project repository.
+
 # References
