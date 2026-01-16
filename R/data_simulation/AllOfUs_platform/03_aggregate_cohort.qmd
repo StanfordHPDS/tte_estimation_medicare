@@ -1,0 +1,140 @@
+---
+title: "03_aggregate_cohort"
+format: html
+editor: visual
+---
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(bigrquery)
+library(googleCloudStorageR)
+library(here)
+```
+
+## Helpers
+
+Note. This function is copied from AllOfUs Researcher Workbench (there is a small set of functions made available in a Jupyter notebook to registered users).
+
+```{r}
+# Read the data directly from Cloud Storage into memory.
+# NOTE: Alternatively you can `gsutil -m cp {survey_13736639_path}` to copy these files
+#       to the Jupyter disk.
+read_bq_export_from_workspace_bucket <- function(export_path) {
+  col_types <- cols(survey = col_character(), question = col_character(), answer = col_character(), survey_version_name = col_character())
+  bind_rows(
+    map(
+      system2("gsutil", args = c("ls", export_path), stdout = TRUE, stderr = TRUE),
+      function(csv) {
+        message(str_glue("Loading {csv}."))
+        chunk <- read_csv(pipe(str_glue("gsutil cat {csv}")), col_types = col_types, show_col_types = FALSE)
+        if (is.null(col_types)) {
+          col_types <- spec(chunk)
+        }
+        chunk
+      }
+    )
+  )
+}
+```
+
+## Read in cohort paths
+
+```{r}
+data_paths <- read_csv(here("all_survey_file_paths.csv"))
+
+survey_data_path <- data_paths[[1, 1]]
+demographic_info_path <- data_paths[[2, 1]]
+```
+
+## Read in HCC-relevant question IDs
+
+```{r}
+hcc_to_concept_id_map <- read_csv(here("hcc_to_concept_map.csv"))
+```
+
+## Read in files
+
+### Demographic information
+
+```{r}
+demographic_df <- read_bq_export_from_workspace_bucket(demographic_info_path)
+
+dim(demographic_df)
+```
+
+### Survey responses
+
+```{r}
+survey_df <- read_bq_export_from_workspace_bucket(survey_data_path)
+
+dim(survey_df)
+```
+
+## Subset survey data frames to relevant questions only
+
+```{r}
+survey_relevant_qs_df <- survey_df |>
+  filter(question_concept_id %in% hcc_to_concept_id_map$value & (str_detect(answer, "- Self") | answer_concept_id %in% c(
+    1384391, # HIV/AIDS
+    1384581, # Hepatitis A
+    1384429, # Hepatitis B
+    1384588, # Hepatitis C
+    1585828, # Pancreas transplant
+    1585826, # Liver transplant
+    1585829, # Intestine transplant
+    1585824, # Heart transplant
+    1585827, # Lung transplant
+    1585694, # Street opioid use once or twice in past 3 months
+    1585697, # Street opioid use daily in past 3 months
+    1585696, # Street opioid use weekly in past 3 months
+    1585695, # Street opioid use monthly in past 3 months
+    1585700, # Non-medical prescription opioid use once or twice in past 3 months
+    1585703, # Non-medical prescription opioid use daily in past 3 months
+    1585702, # Non-medical prescription opioid use weekly in past 3 months
+    1585701, # Non-medical prescription opioid use monthly in past 3 months
+    1585688, # Hallucinogen use once or twice in past 3 months
+    1585658, # Cocaine use once or twice in past 3 months
+    1585676, # Inhalant use once or twice in past 3 months
+    1585682 # Sedative use once or twice in past 3 months
+  ))) # only keep health conditions respondents report having
+```
+
+## Combine with HCC to concept map
+
+```{r}
+all_relevant_qs_w_hcc_df <- survey_relevant_qs_df |>
+  left_join(hcc_to_concept_id_map,
+    by = c("question_concept_id" = "value"),
+    relationship = "many-to-many"
+  )
+```
+
+## Combine with demographic information
+
+```{r}
+all_relevant_qs_w_hcc_and_demo_df <- all_relevant_qs_w_hcc_df |>
+  left_join(demographic_df, by = "person_id")
+```
+
+Verify that all respondents are aged over 65 at time of survey. This is part of the cohort building criteria so it should be the case:
+
+```{r}
+all_relevant_qs_w_hcc_and_demo_df <- all_relevant_qs_w_hcc_and_demo_df |>
+  mutate(
+    survey_datetime = as_datetime(survey_datetime),
+    date_of_birth = as_datetime(date_of_birth),
+    age_at_survey = as.numeric(survey_datetime - date_of_birth) / 365.25
+  ) # dividing age in days by 365.25 to account for leap years
+```
+
+```{r}
+summary(all_relevant_qs_w_hcc_and_demo_df$age_at_survey)
+```
+
+## Write to file:
+
+```{r}
+write_excel_csv(all_relevant_qs_w_hcc_and_demo_df, "aggregated_survey_responses_and_hcc_df.csv")
+```

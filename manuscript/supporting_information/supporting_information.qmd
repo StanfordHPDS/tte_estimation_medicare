@@ -1,0 +1,368 @@
+---
+title: "Supporting Information"
+subtitle: "Time-to-Event Estimation with Unreliably Reported Events in Medicare Health Plan Payment"
+
+author:
+  - name: Oana M. Enache
+    email: oenache@stanford.edu
+    affiliations: 
+        - id: 1
+          name: Stanford University School of Medicine
+          department: Department of Biomedical Data Science
+          address: Edwards Building, 300 Pasteur Drive
+          city: Stanford, CA
+          postal-code: 94304
+    attributes:
+        corresponding: true
+  - name: Sherri Rose
+    affiliations: 
+        - id: 2
+          name: Stanford University
+          department: Department of Health Policy
+          address: Encina Commons, 615 Crothers Way
+          city: Stanford, CA
+          postal-code: 94305
+    attributes:
+        corresponding: false
+
+bibliography: supporting_information_bibliography.bib  
+csl: american-medical-association.csl
+
+geometry:
+  - inner=1in
+  - outer=1in
+  - top=1in
+  - bottom=1in
+  
+mainfont: "Times New Roman"
+fontsize: 12pt
+whitespace: none
+linestretch: 1
+
+format: 
+ elsevier-pdf:
+  keep-tex: true
+  fig-pos: H
+  number-sections: true
+  appendix: true
+  cite-method: citeproc
+---
+
+```{r}
+#| include: FALSE
+library(here)
+library(tidyverse)
+library(kableExtra)
+library(ggokabeito) # color blindness friendly color palette
+```
+
+# Additional information about simulated data {#sec-add-info .appendix}
+
+| HCC | HCC Description | Competing Events |
+|----|----|----|
+| HCC1 | HIV/AIDS | N/A |
+| HCC2 | Septicemia, sepsis, systemic inflammatory response syndrome/shock | N/A |
+| HCC6 | Opportunistic infections | N/A |
+| HCC17 | Cancer metastatic to lung, liver, brain, and other organs; acute myeloid leukemia except promyelocytic | HCC18, HCC19, HCC20, HCC21, HCC22, HCC23 |
+| HCC18 | Cancer metastatic to bone, other and unspecified metastatic cancer; acute leukemia except myeloid | HCC19, HCC20, HCC21, HCC22, HCC23 |
+| HCC19 | Myelodysplastic syndromes, multiple myeloma, and other cancers | HCC20, HCC21, HCC22, HCC23 |
+| HCC20 | Lung and other severe cancers | HCC21, HCC22, HCC23 |
+| HCC21 | Lymphoma and other cancers | HCC22, HCC23 |
+| HCC22 | Bladder, colorectal, and other cancers | HCC23 |
+| HCC23 | Prostate, breast, and other cancers and tumors | N/A |
+| HCC35 | Pancreas transplant status | HCC36, HCC37, HCC38 |
+| HCC36 | Diabetes with severe acute complications | HCC37, HCC38 |
+| HCC37 | Diabetes with chronic complications | HCC38 |
+| HCC38 | Diabetes with glycemic, unspecified, or no complications | N/A |
+| HCC48 | Morbid obesity | N/A |
+| HCC49 | Specified lysosomal storage disorders | N/A |
+| HCC50 | Amyloidosis, porphyria, and other specified metabolic disorders | N/A |
+| HCC51 | Addison's and Cushing's diseases, acromegaly, and other specified endocrine disorders | N/A |
+| HCC62 | Liver transplant status/complications | HCC63, HCC64, HCC65, HCC68 |
+| HCC63 | Chronic liver failure/end-stage liver disorders | HCC64, HCC65, HCC68, HCC202 |
+| HCC64 | Cirrhosis of liver | HCC65, HCC68 |
+| HCC65 | Chronic hepatitis | N/A |
+| HCC68 | Cholangitis and obstruction of bile duct without gallstones | N/A |
+| HCC77 | Intestine transplant status/complications | HCC78, HCC80, HCC81 |
+| HCC78 | Intestinal obstruction/perforation | N/A |
+| HCC79 | Chronic pancreatitis | N/A |
+| HCC80 | Crohn's disease (regional enteritis) | HCC81 |
+| HCC81 | Ulcerative colitis | N/A |
+| HCC92 | Bone/joint/muscle/severe soft tissue infections/necrosis | N/A |
+| HCC93 | Rheumatoid arthritis and other specified inflammatory rheumatic disorders | HCC94 |
+| HCC94 | Systemic lupus erythematosus and other specified systemic connective tissue disorders | N/A |
+| HCC107 | Sickle cell anemia (Hb-SS) and thalassemia beta zero | HCC108 |
+| HCC108 | Sickle cell disorders, except sickle cell anemia (Hb-SS) and thalassemia beta zero; beta thalassemia major | N/A |
+| HCC109 | Acquired hemolytic, aplastic, and sideroblastic anemias | N/A |
+| HCC111 | Hemophilia, male | HCC112 |
+| HCC112 | Immune thrombocytopenia and specified coagulation defects and hemorrhagic conditions | N/A |
+| HCC114 | Common variable and combined immunodeficiencies | HCC115 |
+| HCC115 | Specified immunodeficiencies and white blood cell disorders | N/A |
+| HCC125 | Dementia, severe | HCC126, HCC127 |
+| HCC126 | Dementia, moderate | HCC127 |
+| HCC127 | Dementia, mild or unspecified | N/A |
+| HCC135 | Drug use with psychotic complications | HCC136, HCC137, HCC138, HCC139 |
+| HCC136 | Alcohol use with psychotic complications | HCC137, HCC138, HCC139 |
+| HCC137 | Drug use disorder, moderate/severe, or drug use with non-psychotic complications | HCC138, HCC139 |
+| HCC138 | Drug use disorder, mild, uncomplicated, except cannabis | HCC139 |
+| HCC139 | Alcohol use disorder, moderate/severe, or alcohol use with specified non-psychotic complications | N/A |
+| HCC151 | Schizophrenia | HCC152, HCC153, HCC154, HCC155 |
+| HCC152 | Psychosis, except schizophrenia | HCC153, HCC154, HCC155 |
+| HCC153 | Personality disorders; anorexia/bulimia nervosa | HCC154, HCC155 |
+| HCC154 | Bipolar disorders without psychosis | HCC155 |
+| HCC155 | Major depression, moderate or severe, without psychosis | N/A |
+| HCC180 | Quadriplegia | HCC181, HCC182, HCC253, HCC254 |
+| HCC181 | Paraplegia | HCC182, HCC254 |
+| HCC182 | Spinal cord disorders/injuries | N/A |
+| HCC190 | Amyotrophic lateral sclerosis and other motor neuron disease, spinal muscular atrophy | N/A |
+| HCC191 | Quadriplegic cerebral palsy | HCC180, HCC181, HCC182, HCC192, HCC253, HCC254 |
+| HCC192 | Cerebral palsy, except quadriplegic | HCC180, HCC181, HCC182, HCC253, HCC254 |
+| HCC193 | Chronic inflammatory demyelinating polyneuritis and multifocal motor neuropathy | N/A |
+| HCC195 | Myasthenia gravis with (acute) exacerbation | HCC196 |
+| HCC196 | Myasthenia gravis without (acute) exacerbation and other myoneural disorders | N/A |
+| HCC197 | Muscular dystrophy | N/A |
+| HCC198 | Multiple sclerosis | N/A |
+| HCC199 | Parkinson and other degenerative disease of basal ganglia | N/A |
+| HCC200 | Friedreich and other hereditary ataxias; Huntington disease | N/A |
+| HCC201 | Seizure disorders and convulsions | N/A |
+| HCC202 | Coma, brain compression/anoxic damage | N/A |
+| HCC211 | Respirator dependence/tracheostomy status/complications | HCC212, HCC213 |
+| HCC212 | Respiratory arrest | HCC213 |
+| HCC213 | Cardio-respiratory failure and shock | N/A |
+| HCC221 | Heart transplant status/complications | HCC222, HCC223, HCC224, HCC225, HCC226, HCC227 |
+| HCC222 | End stage heart failure | HCC223, HCC224, HCC225, HCC226, HCC227 |
+| HCC223 | Heart failure with heart assist device/artificial heart | HCC224, HCC225, HCC226, HCC227 |
+| HCC224 | Acute on chronic heart failure | HCC225, HCC226, HCC227 |
+| HCC225 | Acute heart failure (excludes acute on chronic) | HCC226, HCC227 |
+| HCC226 | Heart failure, except end stage and acute | HCC227 |
+| HCC227 | Cardiomyopathy/myocarditis | N/A |
+| HCC228 | Acute myocardial infarction | HCC229 |
+| HCC229 | Unstable angina and other acute ischemic heart disease | N/A |
+| HCC238 | Specified heart arrhythmias | N/A |
+| HCC248 | Intracranial hemorrhage | HCC249 |
+| HCC249 | Ischemic or unspecified stroke | N/A |
+| HCC253 | Hemiplegia/hemiparesis | HCC254 |
+| HCC254 | Monoplegia, other paralytic syndromes | N/A |
+| HCC263 | Atherosclerosis of arteries of the extremities with ulceration or gangrene | HCC264, HCC383, HCC409 |
+| HCC264 | Vascular disease with complications | N/A |
+| HCC267 | Deep vein thrombosis and pulmonary embolism | N/A |
+| HCC276 | Lung transplant status/complications | HCC277, HCC278, HCC279, HCC280 |
+| HCC277 | Cystic fibrosis | HCC278, HCC279, HCC280 |
+| HCC278 | Idiopathic pulmonary fibrosis and lung involvement in systemic sclerosis | HCC279, HCC280 |
+| HCC279 | Severe persistent asthma | HCC280 |
+| HCC280 | Chronic obstructive pulmonary disease, interstitial lung disorders, and other chronic lung disorders | N/A |
+| HCC282 | Aspiration and specified bacterial pneumonias | HCC283 |
+| HCC283 | Empyema, lung abscess | N/A |
+| HCC298 | Severe diabetic eye disease, retinal vein occlusion, and vitreous hemorrhage | N/A |
+| HCC300 | Exudative macular degeneration | N/A |
+| HCC326 | Chronic kidney disease, stage 5 | HCC327, HCC328, HCC329 |
+| HCC327 | Chronic kidney disease, severe (stage 4) | HCC328, HCC329 |
+| HCC328 | Chronic kidney disease, moderate (stage 3B) | HCC329 |
+| HCC329 | Chronic kidney disease, moderate (stage 3, except 3B) | N/A |
+| HCC379 | Pressure ulcer of skin with necrosis through to muscle, tendon, or bone | HCC380, HCC381, HCC382, HCC383 |
+| HCC380 | Chronic ulcer of skin, except pressure, through to bone or muscle | HCC381, HCC382, HCC383 |
+| HCC381 | Pressure ulcer of skin with full thickness skin loss | HCC382, HCC383 |
+| HCC382 | Pressure ulcer of skin with partial thickness skin loss | HCC383 |
+| HCC383 | Chronic ulcer of skin, except pressure, not specified as through to bone or muscle | N/A |
+| HCC385 | Severe skin burn | N/A |
+| HCC387 | Pemphigus, pemphigoid, and other specified autoimmune skin disorders | N/A |
+| HCC397 | Major head injury with loss of consciousness (\> 1 hour) | HCC202, HCC398, HCC399 |
+| HCC398 | Major head injury with loss of consciousness (\< 1 hour or unspecified) | HCC202, HCC399 |
+| HCC399 | Major head injury without loss of consciousness | N/A |
+| HCC401 | Vertebral fractures without spinal cord injury | N/A |
+| HCC402 | Hip fracture/dislocation | N/A |
+| HCC405 | Traumatic amputations and complications | HCC409 |
+| HCC409 | Amputation status, lower limb/amputation complications | N/A |
+| HCC454 | Stem cell, including bone marrow, transplant status/complications | N/A |
+| HCC463 | Artificial openings for feeding or elimination | N/A |
+
+: **Hierarchical Condition Categories (HCCs) included in the Medicare Advantage risk adjustment algorithm version 28 (V28).** Each of the HCCs in this table are described as written in the Centers for Medicare and Medicaid Services' (CMS) 2024 Medicare Advantage Advance Notice [@Centers_for_Medicare_and_Medicaid_Services2023-zf]. Competing events, if applicable, are also noted from the 2024 CMS Risk Adjustment Model Software and ICD-10 Mappings, specifically the Midyear/Final Model Software, which is in the SAS language [@Centers-for-Medicare-and-Medicaid-ServicesUnknown-pf]. If a set of competing events is not N/A, then, if the HCC in that row is coded, none of the competing event HCCs can also be coded for billing purposes. The hierarchy described in the "Competing Events" column can also be found in the `upcoding` R package.
+
+## Summary statistics from All of Us survey data {#sec-allofus .appendix}
+
+These data represent included survey respondents with at least one self-reported health condition that mapped to a Hierarchical Condition Category (HCC) in Version 28 of the Medicare Advantage risk adjustment algorithm. Only sets of co-occurring HCCs with more than 21 respondents (which also excludes several sets with more than 20 respondents) were used in any summary tables to comply with the All of Us Data and Statistics Dissemination Policy.
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Included surveys from All of Us**"
+
+surveys_included <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_count_by_survey_df.csv"),
+  show_col_types = FALSE
+) |>
+  rename(
+    "All of Us Survey Title" = "survey",
+    "Number of Unique Respondents" = num_respondents
+  )
+
+surveys_included |>
+  kable(align = "l")
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Number of respondents by HCC with available survey questions**"
+
+people_per_hcc <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_count_by_hcc_df.csv"),
+  show_col_types = FALSE
+) |>
+  rowwise() |>
+  mutate(
+    hcc = toupper(hcc),
+    hcc_int = as.integer(strsplit(hcc, "HCC")[[1]][2])
+  ) |>
+  ungroup() |>
+  arrange(hcc_int) |>
+  select(-hcc_int) |>
+  rename(
+    "Version 28 HCC" = "hcc",
+    "Number of Respondents" = "num_respondents"
+  )
+
+people_per_hcc |>
+  kable(align = "l")
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Distribution of HCC-relevant conditions per person**"
+
+hcc_count_per_person <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/hccs_by_participant_count_df.csv"),
+  show_col_types = FALSE
+) |>
+  rename(
+    "Number of HCC-Relevant Conditions Per Person" = "hccs_present",
+    "Number of Respondents" = "num_respondents"
+  )
+
+hcc_count_per_person |>
+  kable()
+```
+
+The following tables show respondent information using categories provided by All of Us. Not all respondents responded to all questions so counts may vary. The rows in each table correspond to available fields in All of Us. These characteristics are not displayed jointly because that would result in sample sizes too small to comply with the All of Us Data and Statistics Dissemination Policy.
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondent age at survey response**"
+
+
+respondent_age <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_age_at_survey_response_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(respondent_count),
+    pct = round(respondent_count / total, 2) * 100
+  ) |>
+  select(-total) |>
+  rename(
+    "Age Group (years)" = "age_groups",
+    "Number of Respondents" = "respondent_count",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_age |>
+  kable()
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported sex at birth**"
+
+respondent_sex <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_sex_at_birth_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100
+  ) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Sex at Birth" = "sex_at_birth",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_sex |>
+  kable()
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported ethnicity**"
+
+respondent_ethnicity <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_ethnicity_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100,
+    ethnicity = recode(ethnicity,
+      "PMI: Prefer Not To Answer" = "Prefer not to answer",
+      "PMI: Skip" = "Skipped",
+      "What Race Ethnicity: Race Ethnicity None Of These" = "Neither"
+    )
+  ) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Ethnicity" = "ethnicity",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_ethnicity |>
+  kable()
+```
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported race**"
+
+race_ordering_for_table <- c("Asian", "Black or African American", "White", "Another single population", "More than one population", "I prefer not to answer", "Skipped", "None indicated", "None of these")
+
+respondent_race <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_race_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    race = factor(
+      recode(race,
+        "None Indicated" = "None indicated",
+        "PMI: Skip" = "Skipped"
+      ),
+      levels = c("Asian", "Black or African American", "White", "Another single population", "More than one population", "I prefer not to answer", "Skipped", "None indicated", "None of these")
+    ),
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100
+  ) |>
+  arrange(factor(race), levels = race_ordering_for_table) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Race" = "race",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_race |>
+  kable()
+```
+
+# Additional simulation results {#sec-addl-sim .appendix}
+
+![**Cumulative incidence functions for the Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 25% any-available MA upcoding.** Specified heart arrhythmias corresponds to HCC238, which does not have any competing events. For this HCC, 25% of any-available individuals in the MA group are upcoded and 5% of any-available individuals in the TM comparison group are upcoded. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure1.png)
+
+![**Cumulative incidence functions for the Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 30% any-available MA upcoding.** Specified heart arrhythmias corresponds to HCC238, which does not have any competing events. For this HCC, 30% of any-available individuals in the MA group are upcoded and 5% of any-available individuals in the TM comparison group are upcoded. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure2.png)
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 20% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 20% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure3.png)
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 25% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 25% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure4.png)
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 30% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 30% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure5.png)
+
+![**Within-monitoring period** $\boldsymbol{\psi}$ **estimates for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). For this HCC, individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded to varying degrees and individuals in the TM comparison group are upcoded 5% similarly. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure6.png)
+
+# References

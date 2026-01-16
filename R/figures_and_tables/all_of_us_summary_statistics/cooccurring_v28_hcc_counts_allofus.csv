@@ -1,0 +1,135 @@
+hcc_set,num_respondents
+"hcc1, hcc65",294
+"hcc1, hcc65, hcc155",31
+"hcc1, hcc65, hcc21, hcc23",46
+"hcc1, hcc65, hcc51",31
+"hcc1, hcc65, hcc93",28
+"hcc109, hcc21, hcc23",155
+"hcc109, hcc238",47
+"hcc109, hcc38",52
+"hcc109, hcc398",27
+"hcc109, hcc51",151
+"hcc109, hcc51, hcc21, hcc23",25
+"hcc155, hcc1, hcc65",25
+"hcc155, hcc21, hcc23",187
+"hcc155, hcc21, hcc23, hcc51",24
+"hcc155, hcc23",32
+"hcc155, hcc238",34
+"hcc155, hcc249",25
+"hcc155, hcc300",28
+"hcc155, hcc38",76
+"hcc155, hcc398",47
+"hcc155, hcc51",190
+"hcc155, hcc51, hcc109",27
+"hcc182, hcc21, hcc23",22
+"hcc20, hcc21",131
+"hcc20, hcc21, hcc23",97
+"hcc20, hcc22",87
+hcc21,46
+"hcc21, hcc22, hcc23",40
+"hcc21, hcc23",2341
+"hcc21, hcc23, hcc1, hcc65",38
+"hcc21, hcc23, hcc109",137
+"hcc21, hcc23, hcc155",203
+"hcc21, hcc23, hcc155, hcc51",29
+"hcc21, hcc23, hcc182",25
+"hcc21, hcc23, hcc20",24
+"hcc21, hcc23, hcc228",31
+"hcc21, hcc23, hcc238",131
+"hcc21, hcc23, hcc249",27
+"hcc21, hcc23, hcc280",22
+"hcc21, hcc23, hcc300",60
+"hcc21, hcc23, hcc38",90
+"hcc21, hcc23, hcc398",73
+"hcc21, hcc23, hcc51",296
+"hcc21, hcc23, hcc51, hcc109",28
+"hcc21, hcc23, hcc78",90
+"hcc21, hcc23, hcc93",200
+"hcc22, hcc23",133
+hcc226,51
+hcc228,220
+"hcc228, hcc21, hcc23",26
+"hcc228, hcc38",31
+"hcc228, hcc93",28
+hcc23,618
+"hcc23, hcc109",22
+"hcc23, hcc155",42
+"hcc23, hcc21",103
+"hcc23, hcc238",39
+"hcc23, hcc38",29
+"hcc23, hcc51",50
+"hcc23, hcc93",49
+hcc238,637
+"hcc238, hcc109",44
+"hcc238, hcc155",49
+"hcc238, hcc21, hcc23",134
+"hcc238, hcc226",22
+"hcc238, hcc228",25
+"hcc238, hcc23",33
+"hcc238, hcc249",33
+"hcc238, hcc38",38
+"hcc238, hcc398",25
+"hcc238, hcc51",65
+"hcc238, hcc78",24
+"hcc238, hcc93",76
+hcc249,201
+"hcc249, hcc21, hcc23",40
+"hcc249, hcc238",25
+hcc264,62
+hcc267,100
+"hcc267, hcc21, hcc23",23
+hcc280,200
+"hcc280, hcc21, hcc23",26
+hcc300,325
+"hcc300, hcc155",28
+"hcc300, hcc21, hcc23",49
+"hcc300, hcc51",36
+hcc327,31
+hcc328,79
+"hcc35, hcc62, hcc77, hcc221, hcc276",156
+hcc38,956
+"hcc38, hcc109",65
+"hcc38, hcc155",78
+"hcc38, hcc21, hcc23",102
+"hcc38, hcc228",38
+"hcc38, hcc23",30
+"hcc38, hcc238",46
+"hcc38, hcc328",31
+"hcc38, hcc51",75
+"hcc38, hcc78",55
+"hcc38, hcc93",93
+hcc398,367
+"hcc398, hcc155",51
+"hcc398, hcc21, hcc23",70
+"hcc398, hcc51",57
+"hcc398, hcc93",23
+hcc51,1667
+"hcc51, hcc1, hcc65",29
+"hcc51, hcc109",166
+"hcc51, hcc109, hcc155",28
+"hcc51, hcc109, hcc21, hcc23",22
+"hcc51, hcc155",187
+"hcc51, hcc155, hcc109",22
+"hcc51, hcc21, hcc23",288
+"hcc51, hcc21, hcc23, hcc155",24
+"hcc51, hcc23",50
+"hcc51, hcc238",64
+"hcc51, hcc249",22
+"hcc51, hcc280",25
+"hcc51, hcc300",35
+"hcc51, hcc38",89
+"hcc51, hcc398",40
+"hcc51, hcc78",100
+"hcc51, hcc93",123
+hcc64,76
+"hcc64, hcc1, hcc65",24
+"hcc78, hcc21, hcc23",80
+"hcc78, hcc38",48
+"hcc78, hcc51",114
+"hcc93, hcc21, hcc23",170
+"hcc93, hcc23",47
+"hcc93, hcc238",44
+"hcc93, hcc300",26
+"hcc93, hcc38",92
+"hcc93, hcc398",28
+"hcc93, hcc51",104
