@@ -1,2 +1,197 @@
-# tte_estimation_medicare
-Repository for the paper "Time-to-Event Estimation with Unreliably Reported Events in Medicare Health Plan Payment"
+
+<!-- README.md is generated from README.Rmd. Please edit README.Rmd! -->
+
+# README
+
+## Introduction
+
+This repository contains manuscript-relevant code for the paper titled
+“Time-to-Event Estimation with Unreliably Reported Events in Medicare
+Health Plan Payment” by Oana M. Enache and Sherri Rose.
+
+More specifically, this code:
+
+- (In Section **All of Us**) Extracts co-occurring Hierarchical
+  Condition Categories (from version 28 of the Medicare Advantage risk
+  adjustment payment algorithm) of All of Us respondents
+
+- (In Section **Simulations on Sherlock**) Runs 1000 replicates of
+  simulations for manuscript
+
+- (In Section **Manuscript**) Generates plots and manuscript.
+
+Each of these have their own environment, which is specified in the
+corresponding section. In general, you can restore a project library
+from an renv lockfile by calling
+`renv::restore(lockfile="path/to/lockfile")`; more details are available
+in the [renv package
+documentation](https://rstudio.github.io/renv/reference/restore.html).
+Code listed should be run in the order written unless otherwise
+specified. Output relevant to each section is also available, so only
+using/re-running parts of the code is also possible.
+
+## Repository Structure and Contents
+
+- `R/`
+
+  - `data_simulation/`
+
+    - `AllOfUs_platform/` : Code used on All of Us Researcher Workbench
+      for baseline data generation
+
+    - `manuscript_simulation/` : Code to generate simulation data and
+      estimates for manuscript
+
+  - `figures_and_tables/` : Summary statistics exported from All of Us
+    Researcher Workbench and code to generate all figures in manuscript
+
+- `manuscript/`: Code to generate manuscript and copies in PDF
+
+- `renv/`: Additional local renv files to use for analyses besides on
+  All of Us or Sherlock
+
+- `all_of_us_renv.lock` : renv lockfile to restore environment for All
+  of Us using R version 4.4.0 (current as of January 2026).
+
+- `renv.lock`: renv lockfile to restore environment used for all
+  analyses besides on All of Us or Sherlock
+
+## All of Us
+
+All of this code needs to be run in the All of Us [Researchers
+Workbench](https://www.researchallofus.org/data-tools/workbench/).
+
+### Setup
+
+Obtain [Registered
+Tier](https://www.researchallofus.org/data-tools/data-access/) data
+access.
+
+Restore the environment `all_of_us_renv` from `all_of_us_renv.lock`.
+
+### Code
+
+All code is in `R/data_simulation/AllOfUs_platform`.
+
+Run:
+
+1.  `01_make_hcc_to_AoU_concept_map.qmd`
+
+2.  `02_save_cohort_subsets_to_csv.qmd`
+
+3.  `03_aggregate_cohort.qmd`
+
+4.  `04_basic_eda_and_define_hcc_sets.qmd`
+
+### Output
+
+Co-occurring HCCs with respondent counts is available in the [upcoding
+package](https://github.com/StanfordHPDS/upcoding) in the global
+variable `cooccurring_v28_hcc_counts_allofus`.
+
+Descriptive tables from All of Us respondents are in
+`R/figures_and_tables/all_of_us_summary_statistics`.
+
+All of Us-related summary tables are in Supplementary Information of the
+main manuscript.
+
+## Simulations on Sherlock
+
+Sherlock is a high-performance computing cluster at Stanford University
+that uses Slurm for job scheduling and resource management. See
+[Sherlock Documentation](https://www.sherlock.stanford.edu/docs/) for
+further details.
+
+### Setup
+
+As of December 2025, it does not work to use the local renv on Sherlock.
+So, you can get setup to run the slurm script as follows. This setup
+only needs to happen once.
+
+On Sherlock, run the following commands in this order:
+
+    ```         
+    # Launch interactive dev session with 4 CPUs
+
+    $ sh_dev -c 4
+
+    # Load the required modules
+
+    $ ml purge binutils libgit2
+    $ ml R/4.4.2
+    $ ml fribidi/1.0.12 libwebp/1.3.0 freetype/2.9.1 
+
+    # Launch R and install tidyverse
+
+    $ R
+    > install.packages("tidyverse", repos = "http://cran.us.r-project.org", Ncpus=4)
+    > install.packages("here")
+    > install.packages("furrr")
+    > install.packages("remotes")
+    > install.packages("gert", configure.vars = list(USE_SYSTEM_LIBGIT2 = 1))
+    > install.packages("devtools")
+    > library(devtools)
+    > devtools::install_github("oena/khsmisc") # installs Oana's fork of khmisc package
+    > devtools::install_github("StanfordHPDS/upcoding") # install upcoding package
+    ```
+
+Separately, you need to [create a new SSH key for
+Sherlock](https://docs.github.com/en/enterprise-cloud@latest/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=linux)
+(you only need to do the section “Generating a new SSH key”) and [add it
+to your Github
+account](https://docs.github.com/en/enterprise-cloud@latest/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account),
+if you haven’t already. You also need to authorize this SSH key for use
+with Stanford’s single-sign on using the instructions
+[here](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/authorizing-an-ssh-key-for-use-with-single-sign-on).
+Once this is set you should be able to clone this repo to your account.
+
+### Code
+
+All simulations (1000 replicates) can be run by calling
+`sbatch run_simulations.sh` on Sherlock from the directory it’s in,
+`R/data_simulation/manuscript_simulation`; there is a seed that is
+modified slightly for each replicate. It typically takes 2-4 hours, and
+we recommend running it in your `$SCRATCH` folder as several large
+interim files are generated (and then deleted).
+
+If you do use `$SCRATCH`, keep in mind that files are automatically
+deleted after 90 days; you may want to move your output files elsewhere
+like `$HOME` or `$GROUP_HOME`. Also note that your `$HOME` folder likely
+does not have enough space and that (per Stanford Research Computing)
+`$GROUP_HOME` is not recommended for persistent and heavy computational
+tasks; so, we do not recommend **running** your code in either of these
+spaces.
+
+### Output
+
+There are two output folders generated by the simulation in
+`R/data_simulation/manuscript_simulation` : (1) `output_files/` and
+(2)`hcc_counts/` . You can also find a copy compressed version of each
+of these in `R/data_simulation/manuscript_simulation`.
+
+## Manuscript
+
+### Setup
+
+Restore the renv `renv.lock` . This should occur automatically when you
+open the project.
+
+### Code
+
+Generate all figures (besides those from All of Us):
+
+`Rscript generate_simulation_figures.R` . This will generate figures
+from the zipped
+`R/data_simulation/manuscript_simulation/output_files.zip` and
+`R/data_simulation/manuscript_simulation/hcc_counts.zip`; you do not
+need to unzip them yourself.
+
+The manuscript is generated from the file:
+
+`manuscript/upcoding_metrics_manuscript.qmd`
+
+### Output
+
+A PDF of the manuscript can be found at
+`manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are
+in `R/figures_and_tables/`.

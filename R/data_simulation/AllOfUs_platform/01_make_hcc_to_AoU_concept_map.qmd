@@ -1,0 +1,915 @@
+---
+title: "01_make_hcc_to_AoU_concept_map"
+format: html
+editor: visual
+---
+
+## About
+
+This maps HCCs to relevant concept IDs from one of four AllOfUs surveys; AllOfUs isn't allowing the existing map file to be uploaded to the Google Cloud bucket, so this is remaking it. The format is kept consistent for each HCC category to help make extending the concepts included easier for users.
+
+## Setup & helpers
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+Helper functions:
+
+```{r}
+concepts_to_df <- function(concept_array, hcc_name) {
+  concept_array |>
+    gather() |>
+    mutate(hcc = hcc_name)
+}
+```
+
+## HIV
+
+```{r}
+# Concept IDs
+hiv <- c(1384662)
+```
+
+### HCC1: HIV/AIDS
+
+```{r}
+hcc1_array <- tibble(hiv)
+
+hcc1_df <- concepts_to_df(hcc1_array, "hcc1")
+```
+
+### Aggregate all HIV-related HCCs
+
+```{r}
+hiv_df <- hcc1_df |>
+  mutate(disease_category = "hiv")
+```
+
+## Cancer
+
+```{r}
+# Concept IDs
+bladder_cancer <- c(836768)
+blood_or_soft_tissue_cancer <- c(836769)
+bone_cancer <- c(836770)
+brain_cancer <- c(836771)
+breast_cancer <- c(836772)
+colorectal_cancer <- c(836831)
+endocrine_cancer <- c(836832)
+eye_cancer <- c(836775)
+head_and_neck_cancer <- c(836834)
+kidney_cancer <- c(836776)
+lung_cancer <- c(836777)
+pancreatic_cancer <- c(836779)
+prostate_cancer <- c(836780)
+ovarian_cancer <- c(836778)
+skin_cancer <- c(836781)
+stomach_cancer <- c(836782)
+thyroid_cancer <- c(836783)
+```
+
+### HCC20: Lung and other severe cancers
+
+```{r}
+hcc20_array <- tibble(
+  bladder_cancer,
+  blood_or_soft_tissue_cancer,
+  endocrine_cancer,
+  lung_cancer,
+  pancreatic_cancer,
+  stomach_cancer
+)
+
+hcc20_df <- concepts_to_df(hcc20_array, "hcc20")
+```
+
+### HCC21: Lymphoma and other cancers
+
+```{r}
+hcc21_array <- tibble(
+  breast_cancer,
+  blood_or_soft_tissue_cancer,
+  bone_cancer,
+  brain_cancer,
+  head_and_neck_cancer,
+  lung_cancer,
+  ovarian_cancer,
+  skin_cancer,
+  stomach_cancer
+)
+
+hcc21_df <- concepts_to_df(hcc21_array, "hcc21")
+```
+
+### HCC22: Bladder, Colorectal, and Other Cancers
+
+```{r}
+hcc22_array <- tibble(
+  bladder_cancer,
+  colorectal_cancer,
+  head_and_neck_cancer,
+  kidney_cancer
+)
+
+hcc22_df <- concepts_to_df(hcc22_array, "hcc22")
+```
+
+### HCC23 Prostate, Breast, and Other Cancers and Tumors
+
+```{r}
+hcc23_array <- tibble(
+  breast_cancer,
+  colorectal_cancer,
+  endocrine_cancer,
+  eye_cancer,
+  head_and_neck_cancer,
+  kidney_cancer,
+  lung_cancer,
+  prostate_cancer,
+  skin_cancer,
+  stomach_cancer,
+  thyroid_cancer
+)
+
+hcc23_df <- concepts_to_df(hcc23_array, "hcc23")
+```
+
+### Aggregate cancer-related HCCs
+
+```{r}
+cancer_df <- rbind(
+  hcc20_df,
+  hcc21_df,
+  hcc22_df,
+  hcc23_df
+) |>
+  mutate(disease_category = "cancer")
+```
+
+## Pancreas transplant
+
+```{r}
+# Concept IDs
+pancreas_organ_transplant <- c(1585806)
+```
+
+### HCC35: Pancreas Transplant Status
+
+```{r}
+hcc35_array <- tibble(pancreas_organ_transplant)
+
+hcc35_df <- concepts_to_df(hcc35_array, "hcc35")
+```
+
+### Aggregate pancreatic transplant-related HCCs
+
+```{r}
+pancreas_transplant_df <- hcc35_df |>
+  mutate(disease_category = "pancreas transplant")
+```
+
+## Diabetes
+
+```{r}
+# Concept IDs
+t2_diabetes <- c(836800)
+t1_diabetes <- c(836799)
+```
+
+### HCC38: Diabetes with Glycemic, Unspecified, or No Complications
+
+```{r}
+hcc38_array <- tibble(t1_diabetes, t2_diabetes)
+
+hcc38_df <- concepts_to_df(hcc38_array, "hcc38")
+```
+
+### Aggregate diabetes-related HCCs
+
+```{r}
+diabetes_df <- hcc38_df |>
+  mutate(disease_category = "diabetes")
+```
+
+## Metabolic
+
+```{r}
+# Concept IDs
+hyperthyroidism <- c(836797)
+hypothyroidism <- c(836798)
+unknown_other_thyroid <- c(1740588)
+other_hormone_or_endocrine <- c(1740585)
+```
+
+### HCC51: Addison's and Cushing's Disease, Acromegaly, and Other Specified Endocrine Disorders
+
+```{r}
+hcc51_array <- tibble(
+  hyperthyroidism,
+  hypothyroidism,
+  unknown_other_thyroid,
+  other_hormone_or_endocrine
+)
+
+hcc51_df <- concepts_to_df(hcc51_array, "hcc51")
+```
+
+### Aggregate metabolic HCCs
+
+```{r}
+metabolic_df <- hcc51_df |>
+  mutate(disease_category = "metabolic")
+```
+
+## Liver
+
+```{r}
+# Concept IDs
+liver_transplant <- c(1585806)
+cirrhosis <- c(836839)
+hepatitis <- c(1384662)
+```
+
+### HCC62: Liver Transplant Status/Complications
+
+```{r}
+hcc62_array <- tibble(liver_transplant)
+
+hcc62_df <- concepts_to_df(hcc62_array, "hcc62")
+```
+
+### HCC64: Cirrhosis of Liver
+
+```{r}
+hcc64_array <- tibble(cirrhosis)
+
+hcc64_df <- concepts_to_df(hcc64_array, "hcc64")
+```
+
+### HCC65: Chronic Hepatitis
+
+```{r}
+hcc65_array <- tibble(hepatitis)
+
+hcc65_df <- concepts_to_df(hcc65_array, "hcc65")
+```
+
+### Aggregate liver-related HCCs
+
+```{r}
+liver_df <- rbind(
+  hcc62_df,
+  hcc64_df,
+  hcc65_df
+) |>
+  mutate(disease_category = "liver")
+```
+
+## Gastrointestinal
+
+```{r}
+# Concept IDs
+intestine_transplant <- c(1585806)
+gall_stones <- c(836846)
+peptic_ulcers <- c(836795)
+pancreatitis <- c(1740590)
+crohns <- c(836794)
+ulcerative_colitis <- c(836796)
+```
+
+### HCC77: Intestine Transplant Status/Complications
+
+```{r}
+hcc77_array <- tibble(intestine_transplant)
+
+hcc77_df <- concepts_to_df(hcc77_array, "hcc77")
+```
+
+### HCC78: Intestinal Obstruction/Perforation
+
+```{r}
+hcc78_array <- tibble(gall_stones, peptic_ulcers)
+
+hcc78_df <- concepts_to_df(hcc78_array, "hcc78")
+```
+
+### HCC79: Chronic Pancreatitis
+
+```{r}
+hcc79_array <- tibble(pancreatitis)
+
+hcc79_df <- concepts_to_df(hcc79_array, "hcc79")
+```
+
+### HCC80: Crohn's Disease (Regional Enteritis)
+
+```{r}
+hcc80_array <- tibble(crohns)
+
+hcc80_df <- concepts_to_df(hcc80_array, "hcc80")
+```
+
+### HCC81: Ulcerative Colitis
+
+```{r}
+hcc81_array <- tibble(ulcerative_colitis)
+
+hcc81_df <- concepts_to_df(hcc81_array, "hcc81")
+```
+
+### Aggregate gastrointestinal-related HCCs
+
+```{r}
+gastrointestinal_df <- rbind(
+  hcc77_df,
+  hcc78_df,
+  hcc79_df,
+  hcc80_df,
+  hcc81_df
+) |>
+  mutate(disease_category = "gastrointestinal")
+```
+
+## Musculoskeletal
+
+```{r}
+# Concept IDs
+rheumatoid_arthritis <- c(836820)
+other_arthritis <- c(1740637)
+systemic_lupus <- c(836822)
+```
+
+### HCC93: Rheumatoid Arthritis and Other Specified Inflammatory Rheumatic Disorders
+
+```{r}
+hcc93_array <- tibble(rheumatoid_arthritis, other_arthritis)
+
+hcc93_df <- concepts_to_df(hcc93_array, "hcc93")
+```
+
+### HCC94: Systemic Lupus Erythematosus and Other Specified Systemic Connective Tissue Disorders
+
+```{r}
+hcc94_array <- tibble(systemic_lupus)
+
+hcc94_df <- concepts_to_df(hcc94_array, "hcc94")
+```
+
+### Aggregate musculoskeletal-related HCCs
+
+```{r}
+musculoskeletal_df <- rbind(
+  hcc93_df,
+  hcc94_df
+) |>
+  mutate(disease_category = "musculoskeletal")
+```
+
+## Blood
+
+```{r}
+# Concept IDs
+sickle_cell <- c(836788)
+anemia <- c(836792)
+```
+
+### HCC107: Sickle Cell Anemia (Hb-SS) and Thalassemia Beta Zero
+
+```{r}
+hcc107_array <- tibble(sickle_cell)
+
+hcc107_df <- concepts_to_df(hcc107_array, "hcc107")
+```
+
+### HCC109: Acquired Hemolytic, Aplastic, and Sideroblastic Anemias
+
+```{r}
+hcc109_array <- tibble(anemia)
+
+hcc109_df <- concepts_to_df(hcc109_array, "hcc109")
+```
+
+### Aggregate blood-related HCCs
+
+```{r}
+blood_df <- rbind(
+  hcc107_df,
+  hcc109_df
+) |>
+  mutate(disease_category = "blood")
+```
+
+## Cognitive Disease
+
+```{r}
+# Concept IDs
+dementia <- c(836807)
+```
+
+### HCC127: Dementia, Mild or Unspecified
+
+```{r}
+hcc127_array <- tibble(dementia)
+
+hcc127_df <- concepts_to_df(hcc127_array, "hcc127")
+```
+
+### Aggregate cognitive disease-related HCCs
+
+```{r}
+cognitive_df <- hcc127_df |>
+  mutate(disease_category = "cognitive disease")
+```
+
+## Substance Use
+
+```{r}
+# Concept IDs
+mental_or_substance_use <- c(1740643)
+heroin <- c(1585692)
+opioid_misuse <- c(1585698)
+hallucinogens <- c(1585686)
+cocaine <- c(1585656)
+inhalants <- c(1585674)
+sedatives <- c(1585680)
+alcohol_use_disorder <- c(836827)
+```
+
+### HCC135: Drug Use
+
+```{r}
+hcc135_array <- tibble(mental_or_substance_use)
+
+hcc135_df <- concepts_to_df(hcc135_array, "hcc135")
+```
+
+### HCC137: Drug Use Disorder, Moderate/Severe, or Drug Use with Non-Psychotic Complications
+
+```{r}
+hcc137_array <- tibble(heroin, opioid_misuse)
+
+hcc137_df <- concepts_to_df(hcc137_array, "hcc137")
+```
+
+### HCC138: Drug Use Disorder, Mild, Uncomplicated, Except Cannabis
+
+```{r}
+hcc138_array <- tibble(
+  hallucinogens,
+  cocaine,
+  inhalants,
+  sedatives
+)
+
+hcc138_df <- concepts_to_df(hcc138_array, "hcc138")
+```
+
+### HCC139: Alcohol Use Disorder, Moderate/Severe, or Alcohol Use with Specified Non-Psychotic Complications
+
+```{r}
+hcc139_array <- tibble(alcohol_use_disorder)
+
+hcc139_df <- concepts_to_df(hcc139_array, "hcc139")
+```
+
+### Aggregate substance use-related HCCs
+
+```{r}
+substance_use_df <- rbind(
+  hcc135_df,
+  hcc137_df,
+  hcc138_df,
+  hcc139_df
+) |>
+  mutate(disease_category = "substance use")
+```
+
+## Psychiatric
+
+```{r}
+# Concept IDs
+schizophrenia <- c(836805)
+personality_disorder <- c(1740659)
+eating_disorder <- c(1740556)
+bipolar_disorder <- c(836803)
+depression <- c(836804)
+```
+
+### HCC151: Schizophrenia
+
+```{r}
+hcc151_array <- tibble(schizophrenia)
+
+hcc151_df <- concepts_to_df(hcc151_array, "hcc151")
+```
+
+### HCC153: Personality Disorders; Anorexia/Bulimia Nervosa
+
+```{r}
+hcc153_array <- tibble(personality_disorder, eating_disorder)
+
+hcc153_df <- concepts_to_df(hcc153_array, "hcc153")
+```
+
+### HCC154: Bipolar Disorders without Psychosis
+
+```{r}
+hcc154_array <- tibble(bipolar_disorder)
+
+hcc154_df <- concepts_to_df(hcc154_array, "hcc154")
+```
+
+### HCC155: Major Depression, Moderate or Severe, without Psychosis
+
+```{r}
+hcc155_array <- tibble(depression)
+
+hcc155_df <- concepts_to_df(hcc155_array, "hcc155")
+```
+
+### Aggregate psychiatric HCCs
+
+```{r}
+psychiatric_df <- rbind(
+  hcc151_df,
+  hcc153_df,
+  hcc154_df,
+  hcc155_df
+) |>
+  mutate(disease_category = "psychiatric")
+```
+
+## Spinal
+
+```{r}
+# Concept IDs
+spinal_cord_injury <- c(1740576)
+```
+
+### HCC182: Spinal Cord Disorders/Injuries
+
+```{r}
+hcc182_array <- tibble(spinal_cord_injury)
+
+hcc182_df <- concepts_to_df(hcc182_array, "hcc182")
+```
+
+### Aggregate spinal concepts
+
+```{r}
+spinal_df <- hcc182_df |>
+  mutate(disease_category = "spinal")
+```
+
+## Neurological
+
+```{r}
+# Concept IDs
+als <- c(836806)
+cerebral_palsy <- c(1740628)
+muscular_dystrophy <- c(836810)
+multiple_sclerosis <- c(836809)
+parkinsons <- c(836812)
+epilepsy_or_seizures <- c(836852)
+```
+
+### HCC190: Amyotrophic Lateral Sclerosis and Other Motor Neuron Disease, Spinal Muscular Atrophy
+
+```{r}
+hcc190_array <- tibble(als)
+
+hcc190_df <- concepts_to_df(hcc190_array, "hcc190")
+```
+
+### HCC192: Cerebral Palsy, Except Quadriplegic
+
+```{r}
+hcc192_array <- tibble(cerebral_palsy)
+
+hcc192_df <- concepts_to_df(hcc192_array, "hcc192")
+```
+
+### HCC197: Muscular Dystrophy
+
+```{r}
+hcc197_array <- tibble(muscular_dystrophy)
+
+hcc197_df <- concepts_to_df(hcc197_array, "hcc197")
+```
+
+### HCC198: Multiple Sclerosis
+
+```{r}
+hcc198_array <- tibble(multiple_sclerosis)
+
+hcc198_df <- concepts_to_df(hcc198_array, "hcc198")
+```
+
+### HCC199: Parkinson and Other Degenerative Disease of Basal Ganglia
+
+```{r}
+hcc199_array <- tibble(parkinsons)
+
+hcc199_df <- concepts_to_df(hcc199_array, "hcc199")
+```
+
+### HCC201: Seizure Disorders and Convulsions
+
+```{r}
+hcc201_array <- tibble(epilepsy_or_seizures)
+
+hcc201_df <- concepts_to_df(hcc201_array, "hcc201")
+```
+
+### Aggregate neurological HCCs
+
+```{r}
+neurological_df <- rbind(
+  hcc190_df,
+  hcc192_df,
+  hcc197_df,
+  hcc198_df,
+  hcc199_df,
+  hcc201_df
+) |>
+  mutate(disease_category = "neurological")
+```
+
+## Heart
+
+```{r}
+# Concept IDs
+heart_transplant <- c(1585806)
+heart_failure <- c(836785)
+heart_attack <- c(836786)
+afib <- c(836828)
+```
+
+### HCC221: Heart Transplant Status/Complications
+
+```{r}
+hcc221_array <- tibble(heart_transplant)
+
+hcc221_df <- concepts_to_df(hcc221_array, "hcc221")
+```
+
+### HCC226: Heart Failure, Except End Stage and Acute
+
+```{r}
+hcc226_array <- tibble(heart_failure)
+
+hcc226_df <- concepts_to_df(hcc226_array, "hcc226")
+```
+
+### HCC228: Acute Myocardial Infarction
+
+```{r}
+hcc228_array <- tibble(heart_attack)
+
+hcc228_df <- concepts_to_df(hcc228_array, "hcc228")
+```
+
+### HCC238: Specified Heart Arrhythmias
+
+```{r}
+hcc238_array <- tibble(afib)
+
+hcc238_df <- concepts_to_df(hcc238_array, "hcc238")
+```
+
+### Aggregate heart-related HCCs
+
+```{r}
+heart_df <- rbind(
+  hcc221_df,
+  hcc226_df,
+  hcc228_df,
+  hcc238_df
+) |>
+  mutate(disease_category = "heart")
+```
+
+## Cerebrovascular
+
+```{r}
+# Concept IDs
+stroke <- c(836789)
+tia <- c(1740677)
+```
+
+### HCC249: Ischemic or Unspecified Stroke
+
+```{r}
+hcc249_array <- tibble(stroke, tia)
+
+hcc249_df <- concepts_to_df(hcc249_array, "hcc249")
+```
+
+### Aggregate cerebrovascular concepts
+
+```{r}
+cerebrovascular_df <- hcc249_df |>
+  mutate(disease_category = "cerebrovascular")
+```
+
+## Vascular
+
+```{r}
+# Concept IDs
+peripheral_vascular_disease <- c(836837)
+pulmonary_embolism_or_dvt <- c(836849)
+```
+
+### HCC264: Vascular Disease with Complications
+
+```{r}
+hcc264_array <- tibble(peripheral_vascular_disease)
+
+hcc264_df <- concepts_to_df(hcc264_array, "hcc264")
+```
+
+### HCC267: Deep Vein Thrombosis and Pulmonary Embolism
+
+```{r}
+hcc267_array <- tibble(pulmonary_embolism_or_dvt)
+
+hcc267_df <- concepts_to_df(hcc267_array, "hcc267")
+```
+
+### Aggregate vascular-related HCCs
+
+```{r}
+vascular_df <- rbind(
+  hcc264_df,
+  hcc267_df
+) |> mutate(disease_category = "vascular")
+```
+
+## Lung
+
+```{r}
+# Concept IDs
+lung_transplant <- c(1585806)
+copd <- c(836858)
+```
+
+### HCC276: Lung Transplant Status/Complications
+
+```{r}
+hcc276_array <- tibble(lung_transplant)
+
+hcc276_df <- concepts_to_df(hcc276_array, "hcc276")
+```
+
+### HCC280: Chronic Obstructive Pulmonary Disease, Interstitial Lung Disorders, and Other Chronic Lung Disorders
+
+```{r}
+hcc280_array <- tibble(copd)
+
+hcc280_df <- concepts_to_df(hcc280_array, "hcc280")
+```
+
+### Aggregate lung-related HCCs
+
+```{r}
+lung_df <- rbind(
+  hcc276_df,
+  hcc280_df
+) |>
+  mutate(disease_category = "lung")
+```
+
+## Eye
+
+```{r}
+# Concept IDs
+macular_degeneration <- c(836826)
+```
+
+### HCC300: Exudative Macular Degeneration
+
+```{r}
+hcc300_array <- tibble(macular_degeneration)
+
+hcc300_df <- concepts_to_df(hcc300_array, "hcc300")
+```
+
+### Aggregate eye-related HCCs
+
+```{r}
+eye_df <- hcc300_df |>
+  mutate(disease_category = "eye")
+```
+
+## Kidney
+
+```{r}
+# Concept IDs
+kd_with_dialysis <- c(1740650)
+acute_kd_no_dialysis <- c(1740620)
+kd_no_dialysis <- c(1740676)
+```
+
+### HCC326: Chronic Kidney Disease, Stage 5
+
+```{r}
+hcc326_array <- tibble(kd_with_dialysis)
+
+hcc326_df <- concepts_to_df(hcc326_array, "hcc326")
+```
+
+### HCC327: Chronic Kidney Disease, Severe (Stage 4)
+
+```{r}
+hcc327_array <- tibble(acute_kd_no_dialysis)
+
+hcc327_df <- concepts_to_df(hcc327_array, "hcc327")
+```
+
+### HCC328: Chronic Kidney Disease, Moderate (Stage 3B)
+
+```{r}
+hcc328_array <- tibble(kd_no_dialysis)
+
+hcc328_df <- concepts_to_df(hcc328_array, "hcc328")
+```
+
+### Aggregate kidney-related HCCs
+
+```{r}
+kidney_df <- rbind(
+  hcc326_df,
+  hcc327_df,
+  hcc328_df
+) |>
+  mutate(disease_category = "kidney")
+```
+
+## Injury
+
+```{r}
+# Concept IDs
+traumatic_brain_injury <- c(1740627)
+concussion <- c(1740671)
+```
+
+### HCC397: Major Head Injury with Loss of Consciousness (> 1 Hour)
+
+```{r}
+hcc397_array <- tibble(traumatic_brain_injury)
+
+hcc397_df <- concepts_to_df(hcc397_array, "hcc397")
+```
+
+### HCC398: Major Head Injury with Loss of Consciousness (< 1 Hour or Unspecified)
+
+```{r}
+hcc398_array <- tibble(concussion)
+
+hcc398_df <- concepts_to_df(hcc398_array, "hcc398")
+```
+
+### Aggregate injury-related HCCs
+
+```{r}
+injury_df <- rbind(
+  hcc397_df,
+  hcc398_df
+) |>
+  mutate(disease_category = "injury")
+```
+
+## Aggregate all categories
+
+```{r}
+aggregated_hcc_to_concept_df <- rbind(
+  hiv_df,
+  cancer_df,
+  pancreas_transplant_df,
+  diabetes_df,
+  metabolic_df,
+  liver_df,
+  gastrointestinal_df,
+  musculoskeletal_df,
+  blood_df,
+  cognitive_df,
+  substance_use_df,
+  psychiatric_df,
+  spinal_df,
+  neurological_df,
+  heart_df,
+  cerebrovascular_df,
+  vascular_df,
+  lung_df,
+  eye_df,
+  kidney_df,
+  injury_df
+)
+```
+
+```{r}
+# store the dataframe in current workspace
+write_excel_csv(aggregated_hcc_to_concept_df, here("hcc_to_concept_map.csv"))
+```

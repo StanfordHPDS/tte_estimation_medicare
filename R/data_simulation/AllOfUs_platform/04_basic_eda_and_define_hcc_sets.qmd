@@ -1,0 +1,222 @@
+---
+title: "04_basic_eda_and_define_hcc_sets"
+format: html
+editor: visual
+---
+
+Note. Summary tables are generated to comply with [AllOfUs Data and Statistics Dissemination Policy](https://support.researchallofus.org/hc/en-us/articles/360043016291-How-to-comply-with-the-All-of-Us-Data-and-Statistics-Dissemination-Policy).
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+Read in data:
+
+```{r}
+survey_df <- read_csv("aggregated_survey_responses_and_hcc_df.csv")
+```
+
+Create directory to save descriptive tables and figures:
+
+```{r}
+if (!dir.exists(here("all_of_us_summary_statistics"))) {
+  dir.create(here("all_of_us_summary_statistics"))
+}
+```
+
+## Identify co-occurring HCC sets with > 21 respondents
+
+Note. To comply with the All of Us Data and Statistics Dissemination Policy, this excludes all summary counts of 20 or fewer individuals as well as several co-occurring HCC sets with summary counts greater than 20.
+
+```{r}
+cooccurring_v28_hcc_counts_allofus <- survey_df |>
+  group_by(person_id) |>
+  summarise(hcc_set = toString(unique(hcc))) |>
+  ungroup() |>
+  group_by(hcc_set) |>
+  summarise(
+    num_respondents = length(unique(person_id)),
+    respondent_ids = toString(unique(person_id))
+  ) |>
+  filter(num_respondents > 21)
+```
+
+Get IDs for respondents who are in sufficiently large HCC sets:
+
+```{r}
+respondent_ids <- cooccurring_v28_hcc_counts_allofus |>
+  pull(respondent_ids) |>
+  paste0(collapse = ", ") |>
+  str_split(", ") |>
+  first() |>
+  as.numeric()
+```
+
+Filter survey_df to only these participants:
+
+```{r}
+survey_df <- survey_df |>
+  filter(person_id %in% respondent_ids)
+```
+
+Only save co-occurring counts without IDs:
+
+```{r}
+cooccurring_v28_hcc_counts_allofus_no_ids <- cooccurring_v28_hcc_counts_allofus |>
+  select(-respondent_ids)
+
+write_csv(
+  cooccurring_v28_hcc_counts_allofus_no_ids,
+  here("all_of_us_summary_statistics/cooccurring_v28_hcc_counts_allofus.csv")
+)
+```
+
+## Respondents by survey
+
+```{r}
+respondents_by_survey_df <- survey_df |>
+  group_by(survey) |>
+  summarize(num_respondents = length(unique(person_id)))
+
+respondents_by_survey_df
+```
+
+```{r}
+write_csv(
+  respondents_by_survey_df,
+  here("all_of_us_summary_statistics/participant_count_by_survey_df.csv")
+)
+```
+
+## HCC coverage
+
+Number of responses for each HCC-like category included:
+
+```{r}
+respondents_by_hcc_df <- survey_df |>
+  group_by(hcc) |>
+  summarise(num_respondents = length(unique(person_id)))
+
+respondents_by_hcc_df
+```
+
+```{r}
+write_csv(
+  respondents_by_hcc_df,
+  here("all_of_us_summary_statistics/participant_count_by_hcc_df.csv")
+)
+```
+
+Number of HCC-relevant responses:
+
+```{r}
+hccs_by_participant_count_df <- survey_df |>
+  group_by(person_id) |>
+  summarise(hccs_present = length(unique(hcc))) |>
+  ungroup() |>
+  group_by(hccs_present) |>
+  count() |>
+  rename(num_respondents = n) |>
+  ungroup() |>
+  filter(hccs_present <= 5) # others excluded for varying reasons
+
+hccs_by_participant_count_df
+```
+
+```{r}
+write_csv(
+  hccs_by_participant_count_df,
+  here("all_of_us_summary_statistics/hccs_by_participant_count_df.csv")
+)
+```
+
+## Respondent demographics
+
+Age (note: this was specifically filtered for in cohort definition):
+
+```{r}
+participant_age_df <- survey_df |>
+  mutate(age_at_survey = round(age_at_survey)) |>
+  group_by(age_at_survey) |>
+  summarise(num_respondents = n_distinct(person_id)) |>
+  mutate(
+    age_groups = case_when(
+      age_at_survey < 70 ~ "[65-70)",
+      age_at_survey < 75 ~ "[70-75)",
+      age_at_survey < 80 ~ "[75-80)",
+      age_at_survey < 85 ~ "[80-85)",
+      .default = "[85-90)"
+    )
+  ) |>
+  count(age_groups, wt = num_respondents, name = "respondent_count")
+
+participant_age_df
+```
+
+```{r}
+write_csv(
+  participant_age_df,
+  here("all_of_us_summary_statistics/participant_age_at_survey_response_df.csv")
+)
+```
+
+Self-reported sex assigned at birth:
+
+```{r}
+participant_sex_at_birth_df <- survey_df |>
+  group_by(sex_at_birth) |>
+  summarise(num_respondents = length(unique(person_id)))
+
+participant_sex_at_birth_df
+```
+
+```{r}
+write_csv(
+  participant_sex_at_birth_df,
+  here("all_of_us_summary_statistics/participant_sex_at_birth_df.csv")
+)
+```
+
+Self-reported race:
+
+```{r}
+participant_race_df <- survey_df |>
+  group_by(race) |>
+  summarise(num_respondents = length(unique(person_id)))
+
+participant_race_df
+```
+
+```{r}
+write_csv(
+  participant_race_df,
+  here("all_of_us_summary_statistics/participant_race_df.csv")
+)
+```
+
+Self-reported ethnicity:
+
+```{r}
+participant_ethnicity_df <- survey_df |>
+  group_by(ethnicity) |>
+  summarise(num_respondents = length(unique(person_id)))
+
+participant_ethnicity_df
+```
+
+```{r}
+write_csv(
+  participant_ethnicity_df,
+  here("all_of_us_summary_statistics/participant_ethnicity_df.csv")
+)
+```
+
+```{r}
+# File cleanup
+file.remove(here("all_survey_file_paths.csv"))
+file.remove(here("hcc_to_concept_map.csv"))
+file.remove(here("aggregated_survey_responses_and_hcc_df.csv"))
+```
