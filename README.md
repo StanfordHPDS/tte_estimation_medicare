@@ -5,9 +5,8 @@
 
 ## Introduction
 
-This repository contains manuscript-relevant code for the paper titled
-“Time-to-Event Estimation with Unreliably Reported Events in Medicare
-Health Plan Payment” by Oana M. Enache and Sherri Rose.
+This repository contains code for the paper “Time-to-Event Estimation with Unreliably Reported Events in Medicare
+Health Plan Payment” by Oana M. Enache and Sherri Rose (2026), [arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
 
 More specifically, this code:
 
