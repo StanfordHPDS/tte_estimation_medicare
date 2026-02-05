@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Introduction
 
-This repository contains manuscript-relevant code for the paper titled "Time-to-Event Estimation with Unreliably Reported Events in Medicare Health Plan Payment" by Oana M. Enache and Sherri Rose.
+This repository contains manuscript-relevant code for the paper titled "Time-to-Event Estimation with Unreliably Reported Events in Medicare Health Plan Payment" by Oana M. Enache and Sherri Rose, [arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
 
 More specifically, this code:
 
@@ -133,7 +133,7 @@ Restore the renv `renv.lock` . This should occur automatically when you open the
 
 ### Code
 
-Generate all figures (besides those from All of Us):
+Generate all figures:
 
 `Rscript generate_simulation_figures.R` . This will generate figures from the zipped `R/data_simulation/manuscript_simulation/output_files.zip` and `R/data_simulation/manuscript_simulation/hcc_counts.zip`; you do not need to unzip them yourself.
 
@@ -143,4 +143,4 @@ The manuscript is generated from the file:
 
 ### Output
 
-A PDF of the manuscript can be found at `manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are in `R/figures_and_tables/`.
+A PDF of the manuscript can be found at `manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are in `manuscript/images/`. The supporting information PDF and corresponding images are available in `manuscript/supporting_information/supporting_information.pdf` and `manuscript/supporting_information/images/` respectively.
