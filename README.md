@@ -5,8 +5,10 @@
 
 ## Introduction
 
-This repository contains code for the paper “Time-to-Event Estimation with Unreliably Reported Events in Medicare
-Health Plan Payment” by Oana M. Enache and Sherri Rose (2026), [arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
+This repository contains manuscript-relevant code for the paper titled
+“Time-to-Event Estimation with Unreliably Reported Events in Medicare
+Health Plan Payment” by Oana M. Enache and Sherri Rose,
+[arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
 
 More specifically, this code:
 
@@ -177,7 +179,7 @@ open the project.
 
 ### Code
 
-Generate all figures (besides those from All of Us):
+Generate all figures:
 
 `Rscript generate_simulation_figures.R` . This will generate figures
 from the zipped
@@ -193,4 +195,7 @@ The manuscript is generated from the file:
 
 A PDF of the manuscript can be found at
 `manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are
-in `R/figures_and_tables/`.
+in `manuscript/images/`. The supporting information PDF and
+corresponding images are available in
+`manuscript/supporting_information/supporting_information.pdf` and
+`manuscript/supporting_information/images/` respectively.
