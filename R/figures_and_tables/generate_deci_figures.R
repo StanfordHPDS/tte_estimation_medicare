@@ -122,6 +122,6 @@ generate_deci_figures <- function() {
     )
 
   # Save as PNG and TIFF
-  ggsave(here("manuscript/images/enache_figure3.png"), width = 8, height = 5, device = "png", dpi = 300)
-  ggsave(here("manuscript/images/enache_figure3.tiff"), width = 8, height = 5, device = "tiff", dpi = 300)
+  ggsave(here("manuscript/images/enache_figure4.png"), width = 8, height = 5, device = "png", dpi = 300)
+  ggsave(here("manuscript/images/enache_figure4.tiff"), width = 8, height = 5, device = "tiff", dpi = 300)
 }
