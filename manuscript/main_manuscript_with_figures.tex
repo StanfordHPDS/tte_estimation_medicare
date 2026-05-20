@@ -94,6 +94,12 @@
 \def\fps@figure{htbp}
 \makeatother
 
+\ifLuaTeX
+  \usepackage{luacolor}
+  \usepackage[soul]{lua-ul}
+\else
+  \usepackage{soul}
+\fi
 
 % definitions for citeproc citations
 \NewDocumentCommand\citeproctext{}{}
@@ -141,20 +147,6 @@
  
 
 
-\usepackage{booktabs}
-\usepackage{longtable}
-\usepackage{array}
-\usepackage{multirow}
-\usepackage{wrapfig}
-\usepackage{float}
-\usepackage{colortbl}
-\usepackage{pdflscape}
-\usepackage{tabu}
-\usepackage{threeparttable}
-\usepackage{threeparttablex}
-\usepackage[normalem]{ulem}
-\usepackage{makecell}
-\usepackage{xcolor}
 \makeatletter
 \@ifpackageloaded{caption}{}{\usepackage{caption}}
 \AtBeginDocument{%
@@ -240,31 +232,35 @@ CA},postcode={94305},postcodesep={}}
 
         
 \begin{abstract}
-Time-to-event estimation (i.e., survival analysis) is common in health
-research, most often using methods that assume proportional hazards and
-no competing risks. Because both assumptions are frequently invalid,
-estimators more aligned with real-world settings have been proposed. An
-effect can be estimated as the difference in areas below the cumulative
-incidence functions of two groups up to a pre-specified time point. This
-approach, restricted mean time lost (RMTL), can be used in settings with
-competing risks as well. We extend RMTL estimation for use in an
-understudied health policy application in Medicare. Medicare currently
-supports healthcare payment for over 69 million beneficiaries, most of
-whom are enrolled in Medicare Advantage plans and receive insurance from
-private insurers. These insurers are prospectively paid by the federal
-government for each of their beneficiaries' anticipated health needs
-using an ordinary least squares linear regression algorithm. As all
-coefficients are positive and predictor variables are largely
-insurer-submitted health conditions, insurers are incentivized to
-upcode, or report more diagnoses than may be accurate. Such gaming is
-projected to cost the federal government \$40 billion in 2025 alone
-without clear benefit to beneficiaries. We propose several novel
-estimators of coding intensity and possible upcoding in Medicare
-Advantage, including accounting for unreliable reporting. We demonstrate
-estimator performance in simulated data leveraging the National
-Institutes of Health's All of Us study and also develop an open source R
-package to simulate realistic labeled upcoding data, which were not
-previously available.
+\textbf{Objective}: To propose time-to-event estimators that help
+evaluate incident diagnostic coding and possible upcoding in Medicare as
+well as introduce an open-source software package that enables more
+reproducible methods development relevant to Medicare billing
+behavior.\\
+\textbf{Study setting and Design}: Observational analysis of simulated
+upcoding based on coding by insurers or providers that may be
+incentivized by Medicare Advantage risk adjustment.\\
+\textbf{Data Sources and Analytic Sample}: Two years of separately
+simulated incident health condition coding data for a Medicare Advantage
+population and a Traditional Medicare population where coding patterns
+are aligned with known practices in each program.\\
+\textbf{Principal Findings}: We propose several novel time-to-event
+estimators of incident coding intensity and possible upcoding in
+Medicare Advantage, including accounting for unreliable reporting. We
+demonstrate estimator performance in simulated data leveraging the
+National Institutes of Health's All of Us study and also develop an open
+source R package to simulate longitudinal realistic labeled upcoding
+data, which were not previously available for researchers. In
+simulations, our novel estimators recovered differences in upcoding
+within and across monitoring periods. Undercoding had a limited effect
+on our novel estimators while an existing estimator was more sensitive
+to undercoding.\\
+\textbf{Conclusions}: Our proposed estimators can help researchers and
+policymakers track new coding behaviors (e.g., as may be incentivized by
+risk adjustment formula updates) earlier and at scale while accounting
+for several real-world data considerations. Further, the R package we
+provide can be used to improve the development, accessibility, and
+reproducible evaluation of coding intensity and upcoding methodology.
 \end{abstract}
 
 
@@ -280,200 +276,219 @@ mean survival time \sep Medicare Advantage \sep upcoding \sep
     
 
 \setstretch{1}
+\newpage{}
+
+\ul{\textbf{Callout Box}}
+
+\textbf{What is known on this topic:}
+
+\begin{itemize}
+\item
+  The present structure of health plan payment in Medicare Advantage
+  incentivizes high coding intensity and possible upcoding, costing the
+  federal government billions annually without clear benefit to
+  beneficiaries.
+\item
+  No individual-level labeled upcoding data are currently available to
+  researchers, making developing and evaluating coding intensity and
+  upcoding measures and estimators challenging.
+\item
+  Current coding intensity estimation approaches largely count diagnoses
+  within a fixed time period (e.g., a year) and do not account for
+  issues like Traditional Medicare undercoding.
+\end{itemize}
+
+\textbf{What this study found:}
+
+\begin{itemize}
+\item
+  This study introduces a set of time-to-event estimators of coding
+  intensity that address some unrealistic assumptions of widely-used
+  existing estimators.
+\item
+  Providing an open-source R package enables the simulation of realistic
+  baseline, undercoded, and upcoded data over time, including labels for
+  upcoding instances.
+\item
+  The proposed estimators and software package can help researchers
+  better evaluate Medicare providers and insurers' coding behaviors and
+  identify health plan payment improvements at scale.
+\end{itemize}
+
 \section{Introduction}\label{introduction}
 
-Time-to-event (TTE) analyses typically aim to compare differences
-between groups drawn from two or more populations in a randomized
-clinical trial or observational study. This may include plotting events
-over time using either Kaplan-Meier or cumulative incidence curves. Most
-commonly, hazard ratios are used to estimate the magnitude of the effect
-between groups\textsuperscript{1--3}. For example, a review of 66
-clinical trials with TTE primary outcomes across four major medical
+Medicare is a federally funded insurance program administered by the
+Centers for Medicare and Medicaid Services (CMS), supporting over 69
+million Americans who are aged 65 years and older or chronically
+disabled\textsuperscript{1}. Beneficiaries choose between receiving
+coverage through Traditional Medicare (TM) or Medicare Advantage (MA).
+TM beneficiaries' care is generally paid directly by CMS for each
+service provided. In contrast, MA beneficiaries receive health insurance
+from private insurers who are paid by CMS for each beneficiary's
+anticipated health needs.
+
+These prospective health plan payments are determined by risk
+adjustment, currently an ordinary least squares linear regression with
+binary demographic and health diagnostic variables, each of which has a
+positive coefficient. The outcome of this algorithm is a risk score,
+which is used to adjust a benchmark payment amount per
+beneficiary\textsuperscript{2,3}. There are 115 variables (hierarchical
+condition categories or HCCs) that report the purported presence or
+absence of certain health conditions in the formula\textsuperscript{4},
+which is also referred to as CMS-HCC\textsuperscript{3}. Although HCCs
+overall correspond to dozens of distinct health conditions, certain
+subsets of these variables also represent severity levels within the
+same condition and are therefore billed in a mutually exclusive manner,
+where payment increases with severity. For example, in the current
+version (version 28 or V28) of CMS-HCC an insurer can only be paid for
+coding one of HCC125-127, which correspond to severe, moderate, and mild
+or unspecified dementia respectively\textsuperscript{3,4}.
+
+Importantly, insurers retain the amount of money paid by CMS regardless
+of what care their beneficiaries actually receive\textsuperscript{2,3}.
+This and the structure of CMS-HCC incentivizes insurers to code for as
+many diagnoses as possible to increase profits\textsuperscript{5--7}.
+Insurers coding for more diagnoses or more severe diagnoses than is
+accurate is referred to as upcoding. This is thought to cost CMS tens of
+billions of dollars annually in unnecessary spending to private insurers
+without clear benefit to MA beneficiaries\textsuperscript{7}. Most major
+MA insurers have also been accused of fraud due to billing practices at
+least once in recent years by the United States Department of Justice,
+largely using information from whistleblowers or other manual
+audits\textsuperscript{8--11}.
+
+Prior literature has also estimated upcoding inconsistently for several
+decades\textsuperscript{6}, in part because there are a number of
+barriers for researchers working on such methods. First, it is difficult
+to definitively identify upcoding when researchers only have access to
+national Medicare claims data, as is typical. Second, gaining access to
+individual-level Medicare data is a time-consuming and sometimes
+inaccessible process. Third, there are limited national data resources
+describing co-occurring health conditions free of coding incentives in
+older adults\textsuperscript{12--14}. Fourth, labeled upcoding data to
+evaluate estimators are not available. This also means that comparing
+proposed methods is challenging, as the data used to develop or evaluate
+methods are often not able to be shared.
+
+Thus, assessment of upcoding in MA is usually done by comparing
+prevalence of coding of beneficiaries, or coding intensity, to coding
+intensity of similar health conditions in TM, with slight variation on
+inclusion and exclusion criteria used\textsuperscript{15}. However, TM
+is known to have underreporting (i.e., undercoding) of health
+conditions\textsuperscript{3,16}. This type of unreliable reporting is
+important to account for as measures of differences between the programs
+will likely be inflated otherwise. Alternative reference data besides TM
+diagnoses have been explored in prior work\textsuperscript{17,18} but
+remain underutilized.
+
+To our knowledge, time-to-event (TTE) analyses (i.e., survival analysis)
+have not previously been used to evaluate coding behaviors in Medicare.
+TTE analyses typically aim to compare differences between groups drawn
+from two or more populations in a randomized clinical trial or
+observational study with censoring, one type of incompletely observed
+data. This may include plotting events over time using either
+Kaplan-Meier or cumulative incidence curves\textsuperscript{19,20}.
+
+Most commonly, hazard ratios are used to estimate the magnitude of the
+effect between groups\textsuperscript{21--23}. For example, a review of
+66 clinical trials with TTE primary outcomes across four major medical
 journals found that 80\% of trials reported a hazard ratio as a main
 finding, while only 21\% of studies reported any alternative
-approaches\textsuperscript{4}.
-
-However, hazard ratios rely on a proportional hazards assumption, which
-is often unrealistic in health data\textsuperscript{1,4,5}. Hazard
-ratios also have an unintuitive interpretation for nonstatistical
-audiences and are a relative value with unclear meaning for
-decision-making\textsuperscript{2,6}. Less frequently, a difference or
-ratio of survival probabilities at a single time point (e.g., mean or
-median) is reported and compared across groups. These types of measures
-also have limitations in practice, including that they omit most of the
-data and may not be estimable in certain scenarios\textsuperscript{2,7}.
+approaches\textsuperscript{24}. However, hazard ratios are unintuitive
+to interpret\textsuperscript{22,25} and rely on an often unrealistic
+proportional hazards assumption\textsuperscript{21,24,26}. Researchers
+sometimes also compare mean or median survival, but this omits most of
+the data and may not be estimable in certain
+scenarios\textsuperscript{22,27}.
 
 Furthermore, alternate approaches are needed if competing risks, or when
 there is more than one mutually exclusive outcome, are present. Despite
 being pervasive in health studies, competing risks are frequently
 ignored, which can result in biased estimates of the primary
-outcome\textsuperscript{8--10}. Additional important considerations in
-TTE analyses include the choice of monitoring period (i.e., the time
+outcome\textsuperscript{20,28,29}. Additional important considerations
+in TTE analyses include the choice of monitoring period (i.e., the time
 window analyzed between a pre-specified origin and end time) and
 comparison group.
 
-\subsection{Restricted mean survival time-based
-methods}\label{restricted-mean-survival-time-based-methods}
-
-Although first proposed in 1949\textsuperscript{11}, restricted mean
+Although first proposed in 1949\textsuperscript{30}, restricted mean
 survival time (RMST) was revisited for TTE estimation in more
-contemporary literature\textsuperscript{5,6,12--14}. RMST is defined as
-the area under the survival curve of time to an event for a single
+contemporary literature\textsuperscript{25,26,31--33} because it
+addresses many of the issues of more popular approaches. RMST is defined
+as the area under the survival curve of time to an event for a single
 monitoring period. It can be interpreted as the mean time to event for
 all study participants followed in that monitoring
-period\textsuperscript{6}. RMST addresses many of the issues of more
-popular comparison approaches. With large enough sample sizes, it is
+period\textsuperscript{25}. With large enough sample sizes, it is
 estimable nonparametrically, does not require proportional hazards, and
-is censoring independent\textsuperscript{6}. Recent methods development
-has focused on expansions for adaptive and group sequential
-trials\textsuperscript{15,16}, estimating RMST with varying end
-times\textsuperscript{7,17,18}, and permutation testing for small sample
-sizes\textsuperscript{19--22}.
+is censoring independent\textsuperscript{25}.
 
 In TTE analyses with a single outcome, the area above the survival curve
 in one monitoring period (or, the end time minus the RMST) is the
-restricted mean time lost (RMTL)\textsuperscript{23}. RMTL has a number
+restricted mean time lost (RMTL)\textsuperscript{34}. RMTL has a number
 of appealing features, including that it can straightforwardly be
 extended to correspond to the area below cause- or event-specific
 cumulative incidence curves in competing risk
-settings\textsuperscript{10,23,24}. In such scenarios, an event-specific
+settings\textsuperscript{29,34,35}. In such scenarios, an event-specific
 RMTL corresponds to the area below its cumulative incidence curve and
 can be interpreted as the mean time without that particular event in a
-monitoring period\textsuperscript{10}, or a summary of both how many and
+monitoring period\textsuperscript{29}, or a summary of both how many and
 when events occur in that time. Differences in RMTL between two groups
-(for example a treatment and control or other comparison group) can also
-be used to quantify effects\textsuperscript{25}.
+(for example, a treatment and control or other comparison group) can
+also be used to quantify effects\textsuperscript{36}.
 
-\subsection{Payment formulas in Medicare
-Advantage}\label{payment-formulas-in-medicare-advantage}
+We expand RMTL estimation approaches for use in evaluating incident HCC
+coding in MA following CMS-HCC formula updates. Here, individual HCCs
+and sets of mutually exclusive HCCs corresponding to severity levels of
+a single health condition are our events of interest. We propose that
+the latter HCC type can be considered conceptually analogous to
+competing risks in TTE analyses because only one HCC can be recorded and
+paid for at a time. An event occurs when an a diagnosis not reported in
+prior monitoring periods is reported by an insurer.
 
-Our motivating application focuses on the evaluation of incident
-diagnostic coding in Medicare. Medicare is a federally funded insurance
-program administered by the Centers for Medicare and Medicaid Services
-(CMS), supporting over 69 million Americans who are aged 65 years and
-older or chronically disabled\textsuperscript{26}. Beneficiaries choose
-between receiving coverage through Traditional Medicare (TM) or Medicare
-Advantage (MA). TM beneficiaries' care is generally paid directly by CMS
-for each service provided (often referred to as fee-for-service). In
-contrast, more than half of all Medicare beneficiaries are part of the
-MA program and receive health insurance from private insurers who are
-paid by CMS for each beneficiary's anticipated health needs.
-
-We examine the Medicare risk adjustment algorithm that determines
-prospective health plan payments in MA based on binary demographic and
-health diagnostic variables using ordinary least squares linear
-regression. The outcome of this algorithm is a risk score, which is used
-to adjust a benchmark payment amount per beneficiary. Importantly,
-insurers retain the amount of money paid by CMS regardless of what care
-their beneficiaries actually receive\textsuperscript{27,28}.
-
-There are 115 variables that report the purported presence or absence of
-certain health conditions, termed hierarchical condition categories
-(HCCs), in the current risk adjustment formula\textsuperscript{29}.
-Although HCCs overall correspond to dozens of distinct health
-conditions, certain subsets of these variables also represent severity
-levels within the same condition and are therefore billed in a mutually
-exclusive manner. For example, an insurer can only be paid for coding
-one of Pancreas Transplant Status, Diabetes with Severe Acute
-Complications, Diabetes with Chronic Complications, or Diabetes with
-Glycemic, Unspecified, or No Complications\textsuperscript{28}. We
-propose that such sets of HCCs can be considered conceptually analogous
-to competing risks in TTE analyses because only one HCC can be recorded
-and paid for at a time, where the amount paid to insurers increases with
-severity level.
-
-Evaluation of coding in MA is of great interest to health policy
-researchers and policymakers. The structure of the risk adjustment
-formula (called the CMS-HCC formula) as an ordinary least squares
-regression with only positive coefficients incentivizes insurers to code
-for as many diagnoses as possible to increase
-profits\textsuperscript{30--32}. Insurers making their beneficiaries
-appear sicker than they are by coding for more diagnoses or more severe
-diagnoses than necessary is referred to as upcoding. We focus on two
-types of upcoding in this paper. The first we call severity-based
-upcoding, as beneficiaries who have a lower-severity version of an HCC
-are instead coded with a more severe HCC of that health condition. The
-second we refer to as any-available upcoding, where any beneficiaries
-previously not coded with a given HCC could be upcoded, potentially
-fraudulently. When upcoding has not been concretely confirmed (as is
-most often the case in real-world settings) we reflect this by
-describing it as possible upcoding.
-
-Assessment of upcoding in MA is usually done by comparing frequency of
-coding of beneficiaries, or coding intensity, to coding of similar
-health conditions in TM, with slight variation on inclusion and
-exclusion criteria used. However, TM is known to have underreporting
-(i.e., undercoding) of health conditions\textsuperscript{28,33}. This
-type of unreliable reporting is important to account for as measures of
-differences between the programs will likely be inflated otherwise.
-Alternative reference data besides TM diagnoses have been explored in
-prior work but remain underutilized, including mortality
-data\textsuperscript{34} and prescription drug
-utilization\textsuperscript{35}. More recently, a set of measures were
-proposed to distinguish new (incident) versus continuing (persistent)
-coding for individual HCCs\textsuperscript{36}.
-
-In 2025, high MA coding intensity--which likely includes upcoding--is
-estimated to cost CMS \$40 billion in unnecessary spending to private
-insurers without clear benefit to MA beneficiaries\textsuperscript{32}.
-In some past cases, CMS or the United States Department of Justice have
-determined that certain behaviors are upcoding from whistleblower
-reports of fraud\textsuperscript{37,38} or by manually auditing claims
-and electronic health records\textsuperscript{39,40}, neither of which
-are scalable approaches. This is a substantial problem, as most major MA
-insurers have been accused of fraud related to their billing practices
-by whistleblowers or the United States Department of
-Justice\textsuperscript{38,39,41}.
-
-\subsection{Contributions}\label{contributions}
-
-We expand RMTL estimation approaches for use in an impactful but
-understudied health policy application: evaluating incident HCC coding
-in MA following CMS-HCC formula updates. Here, individual HCCs and sets
-of mutually exclusive HCCs corresponding to severity levels of a single
-health condition are our events of interest, where an event occurs when
-an incident diagnosis is reported by an insurer. Besides being a unique
-application of TTE methods in itself, our approach expands on prior
-RMTL-based methodological work by proposing estimators for such analysis
-that can account for underreporting of events in TM, which, to our
-knowledge, has not been previously considered. Further, we propose a
-novel estimation approach for identifying one type of possible
-severity-based upcoding.
+Besides being a unique application of TTE methods in itself, our
+approach expands on prior RMTL-based methodological work by also
+accounting for potential underreporting of events in TM. Further, we
+propose a novel estimation approach for identifying one type of possible
+severity-based upcoding, by which we mean beneficiaries who have a
+lower-severity version of an HCC being coded with the most severe HCC of
+that health condition. Other estimators also apply to a different form
+of upcoding that we call any-available, where any beneficiaries
+previously not coded with a given HCC could be reported as having that
+health condition, potentially fraudulently. When upcoding has not been
+concretely confirmed (as is most often the case in real-world settings)
+we reflect this by describing it as possible upcoding.
 
 Our contributions also include the creation of an R package to simulate
-baseline HCC diagnoses as well as the ability to upcode or undercode
-these data. Our package simulates realistic co-occurring HCCs based on
-older American adults' self-reported health conditions from a large
-national survey. Self-reported data are not impacted by coding
-incentives to the same degree as billing claims or electronic health
-record data\textsuperscript{42--44}, and enable analysis of incident
-coding without underreporting. Our package additionally allows users to
-modify these baseline data by either underreporting existing baseline
-diagnoses (realistic to TM data) or upcoding specific HCCs. Labeled
-upcoding data did not previously exist, so these simulated data are
-broadly useful for methods development in health policy.
+co-occurring HCCs based on older American adults' self-reported health
+conditions from a large national survey. Self-reported data are not
+impacted by coding incentives to the same degree as claims or electronic
+health record data\textsuperscript{12--14} and enable analysis of
+incident coding without underreporting. Our package additionally allows
+users to modify these baseline data by either underreporting existing
+baseline diagnoses (realistic to TM data) or upcoding specific HCCs over
+time, which are then labeled. Labeled upcoding data did not previously
+exist---existing individual-level Medicare do not contain this
+information---so these simulated data are broadly useful for methods
+development in health policy.
 
 \section{Methods}\label{methods}
 
-We outline our statistical approaches for TTE estimation in this
-section. In our setting, TTE and time to reported event are equivalent
-because we do not observe each coding event directly. However, since our
-estimates are over an entire monitoring period, we do not consider
-potential delays in reporting events to have notable impact. In
-addition, multiple events may be reported at each of several time points
-within a monitoring period (e.g., a monitoring period could be a
-calendar year where each time interval is three months). There also may
-be more than one monitoring period where reporting occurs. Given this,
-our goals are to both (1) evaluate reporting of incident events within
-one monitoring period and (2) compare incident event reporting across
-sequential monitoring periods. We focus on estimating differences in
-time to incident coding behaviors, as absolute measures are especially
-useful in health policy contexts\textsuperscript{45} and new behaviors
-following policy changes are as well.
+\subsection{Estimation approach}\label{estimation-approach}
 
-\subsection{Notation}\label{notation}
+In our setting, TTE and time to reported event are equivalent because we
+do not observe each coding event directly; because our estimates are
+over entire monitoring periods, we do not consider potential delays in
+reporting events to have notable impact. Multiple events may be reported
+at each of several time points within one or more monitoring periods
+(e.g., a monitoring period could be a calendar year where each time
+interval is three months). If there are multiple monitoring periods
+(e.g., years) where events are reported, then each monitoring period has
+a separate origin and end time between which events are reported. Our
+goals are to both (1) evaluate reporting of incident events within one
+monitoring period and (2) compare incident event reporting across
+sequential monitoring periods.
 
-\subsubsection{Incident events}\label{incident-events}
+\subsubsection{Notation for incident
+events}\label{notation-for-incident-events}
 
 An event (reported coding of either a single HCC or a single member of a
 set of HCCs corresponding to severity levels of one health condition) is
@@ -495,50 +510,52 @@ is the time to censoring not due to any competing event. We observe
 event happened first, which is denoted by \(\Delta = I(T \le C)\). Our
 observed data are therefore of the form
 \(\{(Y_1, S_1\Delta_1),...,(Y_n, S_n\Delta_n)\}\) for the \(n\) total
-events reported within the monitoring period. It is possible that
-multiple incident events could be reported at the same time. Ordered
-discrete event reporting times are \(t_1 < t_2 < ... < \tau\), where
-\(\tau\) is the end time of the monitoring period. A single time of
-event reporting in a monitoring period is denoted \(t_i\). Finally, when
-comparing across groups or monitoring periods we add a respective \(g\)
-or \(m\) subscript to the notation above. Sequential monitoring periods
-are written as \(m-1\) and \(m\).
+events reported within the monitoring period. Ordered discrete event
+reporting times are \(t_1 < t_2 < ... < \tau\), where \(\tau\) is the
+end time of the monitoring period. A single time of event reporting in a
+monitoring period is denoted \(t_i\). Finally, when comparing across
+groups or monitoring periods we add a respective \(g\) or \(m\)
+subscript to the notation above. Sequential monitoring periods are
+written as \(m-1\) and \(m\).
 
-\subsubsection{Reference events}\label{reference-events}
+\subsubsection{Notation for reference
+events}\label{notation-for-reference-events}
 
 We use a set of reference events, or HCCs distinct from the HCCs
-examined for incident reporting, to estimate underreporting. In theory,
-reference HCCs reported in one monitoring period should continue to be
-reported at equal rates in subsequent monitoring periods. However, in
-practice some reference events (and events in \(g=0\) more broadly) may
-be underreported. Reference events are denoted as a vector \(S^*\) of
-\(h\) distinct HCCs, which can take values \(s^* \in \{1, ..., h\}\).
-None of these reference events have competing events. The persistence of
-a given reference event \(s^*\) in monitoring period \(m\), meaning the
+examined for incident reporting, to estimate underreporting as others
+have done previously\textsuperscript{3,16}. In theory, reference HCCs
+reported in one monitoring period should continue to be reported at
+equal rates in subsequent monitoring periods. However, in practice some
+reference events (and events in \(g=0\) more broadly) may be
+underreported. Reference events are denoted as a vector \(S^*\) of \(h\)
+distinct HCCs, which can take values \(s^* \in \{1, ..., h\}\). None of
+these reference events have competing events. The persistence of a given
+reference event \(s^*\) in monitoring period \(m\), meaning the
 proportion of individuals coded with \(s^*\) in monitoring period \(m\)
 who were previously coded with \(s^*\) in monitoring period \(m-1\), is
-\(q_{s^*,m}\) in line with prior work\textsuperscript{36}.
+\(q_{s^*,m}\) in line with prior work\textsuperscript{15}.
 
-\subsection{Target estimands}\label{target-estimands}
+\subsubsection{Target estimands}\label{target-estimands}
 
-Before describing our estimands for incident event reporting, we first
-describe some key components. Within a group \(g\) and monitoring period
-\(m\), \(F(t) = P(T \le t)\) is the cumulative distribution function of
-\(T\) for all events beginning in that monitoring period. The overall
-hazard \(\lambda (t) = P(T = t \mid T > t)\) can be defined in terms of
+Before describing our estimands for incident event reporting (in
+paragraphs beginning with a bolded description below) we first describe
+some key components. Within a group \(g\) and monitoring period \(m\),
+\(F(t) = P(T \le t)\) is the cumulative distribution function of \(T\)
+for all events beginning in that monitoring period. The overall hazard
+\(\lambda (t) = P(T = t \mid T \ge t)\) can be defined in terms of
 \(F(t)\) as \(\lambda (t) = (F(t) - F(t-1))/(1-F(t-1))\). In addition,
 \(\overline{F}(t) = 1 - F(t) = P(T > t) = \prod_{t_i \le t} (1 - \lambda(t_i))\),
 which is equivalent to the overall survival function in standard TTE
-analyses\textsuperscript{9}.
+analyses\textsuperscript{20}.
 
 The event-specific hazard is analogous to a cause-specific hazard in TTE
 analyses with competing risks. For event \(s\) within group \(g\) and
 monitoring period \(m\), the event-specific hazard at \(t_i\) is
 \(\lambda_s (t_i) = P(T = t_i, S = s \mid T \ge t_i)\). Then, the
 corresponding event-specific cumulative incidence is
-\(F_s(t) = P(T \le t, S = s) = \sum_{t_i \le t} \overline{F}(t_i)\lambda_s(t_i) = \sum_{t_i \le t} \theta (t_i)\)\textsuperscript{9}.
+\(F_s(t) = P(T \le t, S = s) = \sum_{t_i \le t} \overline{F}(t_i)\lambda_s(t_i) = \sum_{t_i \le t} \theta (t_i)\)\textsuperscript{20}.
 Thus, the mean time without event \(s\) is
-\(\mu_s(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i)F_s(t_i)\)\textsuperscript{10}.
+\(\mu_s(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i)F_s(t_i)\)\textsuperscript{29}.
 If we are comparing across sequential monitoring periods or groups, we
 write \(\mu_{s,m}(\tau)\) to specify the monitoring period \(m\) and
 \(\mu_{s,g}(\tau)\) to specify group \(g\).
@@ -552,31 +569,27 @@ events recorded at all equivalent reporting times within the monitoring
 period. We also impose that the overall sample is fixed across all
 monitoring periods.
 
-\subsubsection{Underreporting in comparison
-group}\label{underreporting-in-comparison-group}
+\textbf{Underreporting in comparison group.} The \(s^* \ge 1\) reference
+events occur in \(g=0\) only. So, in the comparison group \(g=0\) only
+and two sequential monitoring periods \(m-1\) and \(m\), our estimand
+for the underreporting proportion \(\epsilon\) is one minus the average
+persistence of all reference events, or
+\(\epsilon = 1 - \frac{1}{h} \sum q_{s^*,m}\). Multiple pairs of
+sequential monitoring periods are distinguished by adding a subscript,
+\(\epsilon_m\), where \(m\) denotes the second monitoring period in a
+pair. More details for this estimand can be found in the appendix.
 
-The \(s^* \ge 1\) reference events occur in \(g=0\) only. So, in the
-comparison group \(g=0\) only and two sequential monitoring periods
-\(m-1\) and \(m\), our estimand for the underreporting proportion
-\(\epsilon\) is one minus the average persistence of all reference
-events, or \(\epsilon = 1 - \frac{1}{h} \sum q_{s^*,m}\). Multiple pairs
-of sequential monitoring periods are distinguished by adding a
-subscript, \(\epsilon_m\), where \(m\) denotes the second monitoring
-period in a pair.
-
-\subsubsection{Difference in mean time without event across
-groups}\label{sec-2.2.2}
-
-We are first interested in estimating the difference in incident
-reporting for event \(s\) across the two groups within one monitoring
-period. So, our estimand is
-\(\psi = \mu_{s,g=1}(\tau) - \mu_{s,g=0}(\tau)\). In a monitoring period
-where \(\epsilon\) is known, the estimand is modified to account for
-underreporting by shifting the event-specific cumulative incidence curve
-in the comparison group \(g=0\) by \(\epsilon\), or
+\textbf{Difference in mean time without event across groups.} We are
+first interested in estimating the difference in incident reporting for
+event \(s\) across the two groups within one monitoring period. So, our
+estimand is \(\psi = \mu_{s,g=1}(\tau) - \mu_{s,g=0}(\tau)\). A
+schematic illustration of this estimand as well as its underlying
+components is available in Figure~\ref{fig-schematic}. In a monitoring
+period where \(\epsilon\) is known, the estimand is modified to account
+for underreporting by shifting the event-specific cumulative incidence
+curve in the comparison group \(g=0\) by \(\epsilon\), or
 \(\mu^*_{s,g=0}(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i)(F_s(t_i) + \epsilon)\).
 This is written as \(\psi^* = \mu_{s,g=1}(\tau) - \mu^*_{s,g=0}(\tau)\).
-
 Across the two groups in two sequential monitoring periods, the reported
 difference in mean time without event that does not account for
 underreporting is \(\psi_{M} = \psi_m - \psi_{m-1}\). \(\psi_m\) and
@@ -585,21 +598,18 @@ to specify the monitoring period. This estimand can also be adjusted to
 account for underreporting when \(\epsilon_m\) and \(\epsilon_{m-1}\)
 are known, becoming \(\psi_M^* = \psi^*_m - \psi^*_{m-1}\).
 
-\subsubsection{Possible severity-based
-upcoding}\label{possible-severity-based-upcoding}
-
-Possible severity-based upcoding can also be estimated within a
-monitoring period. Here, \(s \ge 2\), where the least severe subtype
-corresponds to \(s = 1\) and the most severe subtype to \(s = k\). In
-one monitoring period, possible severity-based upcoding across groups is
-\(\omega = \omega_{g=1} - \omega_{g=0}\), where each
-\(\omega_{g} = \mu_{s=k,g}(\tau) - \mu_{s=1,g}(\tau)\). This is
-equivalent to comparing the difference in incident reporting of the most
-severe event versus the least severe event across groups. If such
+\textbf{Possible severity-based upcoding.} Possible severity-based
+upcoding can also be estimated within a monitoring period by comparing
+the difference in incident reporting of the most severe event versus the
+least severe event across groups. Here, \(s \ge 2\), where the least
+severe subtype corresponds to \(s = 1\) and the most severe subtype to
+\(s = k\). In one monitoring period, possible severity-based upcoding
+across groups is \(\omega = \omega_{g=1} - \omega_{g=0}\), where each
+\(\omega_{g} = \mu_{s=k,g}(\tau) - \mu_{s=1,g}(\tau)\). If such
 reporting is higher in \(g=1\) compared with \(g=0\) (e.g.,
 \(\omega > 0\)), then severity-based upcoding may be occurring.
 
-\subsection{Estimators}\label{estimators}
+\subsubsection{Estimators}\label{estimators}
 
 In order to introduce the estimator of \(\mu_s(\tau)\), we first
 describe the estimator for the event-specific hazard at \(t_i\):
@@ -615,293 +625,159 @@ incidence estimator:
 where
 \(\widehat{\overline{F}}(t) = \prod_{t_i \le t}(1 - \hat{\lambda}(t_i)) = \prod_{t_i \le t}(1 - (d_i/r_i))\)
 is the Kaplan-Meier estimator for
-\(\overline{F}(t) = \prod_{t_i \le t}(1 - \lambda(t_i))\)\textsuperscript{9,46}.
-
-The variance for \(\hat{F}_s(t)\) is
-\(\widehat{\text{var}}(\hat{F}_s(t)) = \sum_{t_l \le t} \widehat{\text{var}}(\hat{\theta}(t_l)) + 2 \sum_{t_l < t} \sum_{t_l < t_i \le t} \widehat{\text{cov}}(\hat{\theta}(t_l), \hat{\theta}(t_i))\),
-and covariance is
-\(\widehat{\text{cov}}(\hat{F}_s(t), \hat{F}_s(u)) = \widehat{\text{var}}(\hat{F}_s(t)) + \sum_{t_l \le t} \sum_{t < t_i \le u} \widehat{\text{cov}}(\hat{\theta}(t_l), \hat{\theta}(t_i))\).
-Here \(t_l\) indicates an event reporting time prior to \(t_i\) and
-\(u\) is an arbitrary time distinct from \(t\). \(\hat{\theta}(t_i)\)
-has variance
-\(\widehat{\text{var}}(\widehat{\theta}(t_i))= (\widehat{\theta}(t_i))^2 \times ((r_i - d_{si})/(d_{si}r_i) + \sum_{t_l < t_i} (d_l/(r_l(r_l - d_l))))\)
-and covariance
-\(\widehat{\text{cov}}(\hat{\theta} (t_i), \hat{\theta} (t_l)) = \hat{\theta} (t_i) \hat{\theta} (t_l)(-(1/r_i) + \sum_{t_l < t_i} (d_l/(r_l(r_l - d_l))))\)\textsuperscript{10},
-where \(d_l = \sum d_{s,l}\) is the reported count of events of any
-subtype at \(t_l\), \(d_{s,l}\) is analogous to \(d_{s,i}\), and \(r_l\)
-is the count of beneficiaries at risk at \(t_l\).
-
+\(\overline{F}(t) = \prod_{t_i \le t}(1 - \lambda(t_i))\)\textsuperscript{20,37}.
 We can now define the estimator of \(\mu_s(\tau)\) based on prior
-literature\textsuperscript{10}, as this is a component of the novel
+literature\textsuperscript{29}, as this is a component of the novel
 estimators we develop next:
 \(\hat{\mu}_s(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i)\hat{F}_s(t_i)\).
-This estimator has variance
-\(\widehat{\text{var}}(\hat{\mu}_s(\tau)) = \sum_{t_i < \tau} (t_{i + 1} - t_i)^2 \widehat{\text{var}}(\hat{F}_s(t_i)) + 2 \sum_{t_i < \tau} \sum_{t_l < t_i} (t_{i+1} - t_i)(t_{l+1} - t_l) \widehat{\text{cov}}(\hat{F}_s(t_i), \hat{F}_s(t_l))\).
+Variances and covariances for estimators in this section are in the
+appendix.
 
-\subsubsection{Underreporting in comparison
-group}\label{sec-underrep-estimator}
-
-For each reported reference event \(s^*\) in \(g=0\) we first compute
-persistence, or the proportion of individuals reported as having \(s^*\)
-in monitoring period \(m\) who where also reported as having \(s^*\) in
-monitoring period \(m-1\). This is then averaged across all reference
-events to obtain
+\textbf{Underreporting in comparison group.} For each reported reference
+event \(s^*\) in \(g=0\) we first compute persistence, or the proportion
+of individuals reported as having \(s^*\) in monitoring period \(m\) who
+where also reported as having \(s^*\) in monitoring period \(m-1\). This
+is then averaged across all reference events to obtain
 \(\hat{\epsilon} = 1 - \frac{1}{h} \sum \hat{q}_{s^*,m}\).
 
-\subsubsection{Difference in mean time without event across
-groups}\label{sec-2.3.2}
-
-We propose that the difference in mean time without an event, \(\psi\),
-is estimated across groups as
-\(\widehat{\psi} = \hat{\mu}_{s,g=1}(\tau) - \hat{\mu}_{s,g=0}(\tau)\)
-with variance
-\(\widehat{\text{var}}(\widehat{\psi}) = \widehat{\text{var}}(\hat{\mu}_{s,g=1}(\tau)) + \widehat{\text{var}}(\hat{\mu}_{s,g=0}(\tau))\),
-as groups are assumed to be independent. To adjust for underreporting,
+\textbf{Difference in mean time without event across groups.} We propose
+that the difference in mean time without an event, \(\psi\), is
+estimated across groups as
+\(\widehat{\psi} = \hat{\mu}_{s,g=1}(\tau) - \hat{\mu}_{s,g=0}(\tau)\).
+To adjust for underreporting,
 \(\hat{\mu}_{s,g=0}(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i) \hat{F}_{s}(t_i)\)
 is modified to
 \(\hat{\mu}_{s,g=0}(\tau) = \sum_{t_i < \tau} (t_{i+1} - t_i) (\hat{F}_{s}(t_i) + \epsilon)\)
-in the estimator for \(\widehat{\psi}\), which does not change the
-variance. The underreporting-adjusted estimator is denoted
-\(\hat{\psi}^*\).
+in the estimator for \(\widehat{\psi}\); this is denoted
+\(\hat{\psi}^*\). Across sequential monitoring periods, \(\psi_M\) is
+estimated as \(\hat{\psi}_M = \hat{\psi}_m - \hat{\psi}_{m-1}\). When an
+underreporting estimate is known for both monitoring periods, this
+estimator becomes
+\(\hat{\psi}_M^* = \hat{\psi}^*_m - \hat{\psi}^*_{m-1}\).
 
-Across sequential monitoring periods, \(\psi_M\) is estimated as
-\(\hat{\psi}_M = \hat{\psi}_m - \hat{\psi}_{m-1}\) with variance
-\(\widehat{\text{var}}(\widehat{\psi}_M) = \widehat{\text{var}}(\widehat{\psi}_m) + \widehat{\text{var}}(\widehat{\psi}_{m-1})\).
-Although the components of this estimator come from the same fixed
-population, the correlation between component estimates is assumed to be
-negligible because we are comparing differences in RMTL across
-independent groups estimated in disjoint time intervals. Therefore,
-covariance is zero. When an underreporting estimate is known for both
-monitoring periods, this estimator becomes
-\(\hat{\psi}_M^* = \hat{\psi}^*_m - \hat{\psi}^*_{m-1}\), and variance
-remains unchanged.
-
-\subsubsection{Possible severity-based
-upcoding}\label{possible-severity-based-upcoding-1}
-
-Our estimator of possible severity-based upcoding across groups,
-\(\omega\), is given by:
+\textbf{Possible severity-based upcoding.} Our estimator \(\omega\), is
+given by:
 \(\widehat{\omega} = \widehat{\omega}_{g=1} - \widehat{\omega}_{g=0}\),
 where each
 \(\widehat{\omega}_{g} = \hat{\mu}_{s=k}(\tau) - \hat{\mu}_{s=1}(\tau)\)
-within one monitoring period. The variance is
-\(\widehat{\text{var}}(\widehat{\omega}) = \widehat{\text{var}}(\widehat{\omega}_{g=1}) + \widehat{\text{var}}(\widehat{\omega}_{g=0})\),
-where
-\(\widehat{\text{var}}(\widehat{\omega_g}) = \widehat{\text{var}}(\hat{\mu}_{s=k}(\tau)) + \widehat{\text{var}}(\hat{\mu}_{s=1}(\tau)) - 2\widehat{\text{cov}}(\hat{\mu}_{s=k}(\tau), \hat{\mu}_{s=1}(\tau))\)
-and
-\(\widehat{\text{cov}}(\hat{\mu}_{s=k}(\tau), \hat{\mu}_{s=1}(\tau)) = \sum_{i} \sum_j \widehat{\text{cov}}(\hat{F}_k(t_{i-1}), \hat{F}_1(t_{j-1}))\)
-for distinct event times \(t_i\) and \(t_j\). Here, \(t_i\) corresponds
-to event reporting increments in the cumulative incidence function for
-severity level \(k\), while \(t_j\) corresponds to the equivalent for
-severity level \(1\). Although event reporting times are the same, we
-write these using separate variables because covariance is estimated
-between all pairs of increments for these two severity levels.
-
-\section{\texorpdfstring{\texttt{upcoding} R
-package}{upcoding R package}}\label{upcoding-r-package}
-
-\subsection{Challenges in identifying and estimating
-upcoding}\label{challenges-in-identifying-and-estimating-upcoding}
-
-Upcoding in Medicare has been inconsistently examined in the medical and
-economics literature for several decades\textsuperscript{31}. One reason
-for this is that it is difficult to definitively identify upcoding,
-particularly given that researchers and policymakers typically only have
-access to national Medicare claims data without beneficiaries'
-corresponding electronic health records or other data. There are also a
-number of barriers to the development of upcoding estimation approaches.
-First, gaining access to individual-level Medicare data is a
-time-consuming process that is inaccessible to many researchers. Second,
-there are limited national data resources describing co-occurring health
-conditions in older adults that are free of coding
-incentives\textsuperscript{42--44}. Third, labeled upcoding data to
-evaluate estimators are not available to researchers. This also means
-that comparing proposed methods is challenging, as the data used to
-develop or evaluate such methods are often not able to be shared by
-researchers.
-
-\subsection{Package functionality}\label{package-functionality}
-
-We developed the open source \texttt{upcoding} R package
-(\url{https://github.com/StanfordHPDS/upcoding}) to help address many of
-these issues. The package enables simulation of longitudinal coding data
-for a Medicare-eligible population as well as more reproducible
-evaluation of approaches for evaluating HCC coding. Features include:
-
-\begin{enumerate}
-\def\labelenumi{\arabic{enumi}.}
-\item
-  \textbf{Simulating a sample of individuals with realistic baseline
-  HCCs}. These co-occurring baseline diagnoses are both based on older
-  Americans' self-reported health conditions and free of upcoding and
-  undercoding.
-\item
-  \textbf{Upcoding baseline data to a specified level over multiple time
-  points.} Users have the option to upcode any HCC using either
-  any-available or severity-based upcoding. This results in labeled
-  upcoding data, which is a useful resource for many types of coding
-  measurement and estimation. In addition, users have the option to vary
-  loss to follow up at each time point, a common issue in billing claims
-  data and cohorts of older adults\textsuperscript{47}.
-\item
-  \textbf{Undercoding baseline data to a specified level}. Users have
-  the option to specify an undercoding proportion, and that proportion
-  of all existing diagnoses are removed from the overall dataset. This
-  can help simulate data that is similar to TM, which may be of interest
-  as a comparison group for analyses as well as the non-undercoded
-  baseline data.
-\end{enumerate}
-
-We describe this functionality in further detail in the subsections
-below. A brief tutorial on specific package functions is available in
-the package's Github repository.
-
-\subsubsection{Baseline data
-simulation}\label{sec-baseline-data-simulation}
-
-To simulate realistic co-occurring HCCs not influenced by coding
-incentives, co-occurring self-reported health conditions from
-participants aged 65 years and older (i.e., Medicare eligible) were
-extracted from the National Institutes of Health's All of Us
-study\textsuperscript{48}. We used self-reported survey data to obtain
-co-occurring health conditions because other national datasets (e.g.,
-Medicare billing claims) report diagnoses for billing purposes and
-therefore may be impacted by coding incentives\textsuperscript{42--44}.
-The All of Us study was designed to enroll a million participants across
-the United States, focusing especially on groups historically
-underrepresented in clinical and biomedical research\textsuperscript{48}
-and included questions that overlapped with many HCCs in the current
-version of CMS-HCC (Version 28, or V28).
-
-V28 HCCs (listed in the Supporting Information) were manually mapped to
-Systemized Nomenclature of Medicine-Clinical Terms (SNOMED-CT) concept
-identifiers for survey questions (using version 7 of All of Us data; see
-this project's Github repository for mapping). Then, survey responses to
-all available SNOMED-CT concepts were queried from the All of Us
-database. Included surveys, available respondent sociodemographic
-characteristics, and coverage of V28 HCCs are described in the
-Supporting Information.
-
-For each surveyed person, self-reported co-occurring V28 HCCs were
-extracted. This was then summarized into a table of unique co-occurring
-HCC sets and a count of the number of All of Us survey respondents that
-reported having these diagnoses. In line with the All of Us Data and
-Statistics Dissemination Policy, only sets of co-occurring HCCs with
-more than 21 respondents were exported from All of Us's platform (the
-Researcher Workbench) to be used in analyses. This both omits all sets
-of 20 or fewer respondents and also excludes several sets of
-co-occurring HCCs with more than 20 respondents. Ultimately, baseline
-data were simulated by sampling with replacement from these sets of
-co-occurring HCCs, where the respondent count is used to weight
-sampling. Users also have the option to use alternate sets of
-co-occurring V28 HCCs for baseline data sampling if they prefer.
-
-\subsubsection{Upcoding and loss to follow up
-simulation}\label{upcoding-and-loss-to-follow-up-simulation}
-
-The package enables users to simulate two types of upcoding realistic to
-MA: any-available or severity-based, although the latter can only occur
-if an HCC has competing events. This upcoding is randomly split across a
-user-specified number of time points. Even though there is inherent
-right censoring in upcoded data (because only a proportion of all
-simulated individuals will be upcoded or coded at all), the package
-provides users with the option to include additional right censoring.
-This is meant to be representative of loss to follow up or death, both
-of which are known issues in following a population aged 65 years and
-older over time\textsuperscript{47}. Users specify the proportion of
-loss to follow up they want to include, and a randomly selected set of
-rows (e.g., individuals) are right censored over each time point. Once
-someone is lost to follow up, they cannot be coded for any HCC in
-subsequent time periods.
-
-\subsubsection{Undercoding simulation}\label{sec-undercoding-simulation}
-
-The package also separately enables undercoding. Here, users specify a
-proportion of all coded diagnoses (from simulated baseline data) to
-randomly remove across the entire data set. This occurs on a
-dataset-wide level because undercoding is a systemic issue in
-TM\textsuperscript{28,33} and so we do not assume that it impacts
-specific V28 HCCs disproportionately.
-
-\section{Simulation study}\label{sec-simulation-study}
-
-Our simulation study demonstrates how the estimators we propose can be
-used to monitor Medicare coding behaviors. To do this, different
-upcoding and underreporting scenarios for the estimator introduced in
-Section~\ref{sec-2.3.2} were compared to an estimator currently used by
-policymakers, defined later in Section~\ref{sec-comparator-estimator}.
-Degrees of upcoding and undercoding were constructed to align with
-current estimates of these issues in MA and TM from the literature. In
-addition, the temporal structure was implemented to be analogous to
-quarterly reporting for the length of time (around two years) that a
-given risk adjustment formula version is typically in place. Each
-individual scenario was replicated 1000 times.
-
-In each replicate, two sets of 1,000,000 observations of baseline data
-were independently simulated using our \texttt{upcoding} R package. For
-each dataset, the columns are the V28 HCCs (listed in the Supporting
-Information). Both any-available and severity-based upcoding were
-implemented in the first baseline data set (the MA-like data). For the
-former type of upcoding, an HCC without any competing HCCs was upcoded.
-As an illustration, we use HCC238 (Specified Heart Arrhythmias). For the
-latter, an HCC that has lower severity HCCs was upcoded, specifically
-HCC125 (Dementia, Severe). HCC125's less severe HCCs are HCC126
-(Dementia, Moderate) and HCC127 (Dementia, Mild or Unspecified). The
-scenarios implemented were as follows:
-
-\textbf{Scenario 1: Upcoding of an HCC that lacks competing events
-(HCC238) with varying underreporting in the comparison group.} Any
-observation not previously coded with HCC238 was eligible to be upcoded.
-Baseline MA data were separately upcoded to varying degrees (20\%, 25\%,
-30\%) sequentially within each monitoring period. The comparison group
-(i.e., TM data) was simulated by first undercoding the baseline TM data
-to varying levels (0\%, 5\%, 10\%, 15\%) and then upcoding HCC238
-analogously but to a lower amount (5\%) per monitoring period.
-
-\textbf{Scenario 2: Upcoding of an HCC with lower-severity competing
-events (HCC125) with varying underreporting in the comparison group.}
-Only observations previously coded with the lower severity HCCs (HCC126
-or HCC127) were eligible to be upcoded. Baseline MA data were separately
-upcoded to varying degrees (20\%, 25\%, 30\%) sequentially within each
-monitoring period. The comparison group was simulated by first
-undercoding the baseline TM data to varying levels (0\%, 5\%, 10\%,
-15\%) and then upcoding HCC125 analogously but to a lower amount (5\%)
-per monitoring period.
+within one monitoring period.
 
 \subsection{Comparator estimator}\label{sec-comparator-estimator}
 
 We compared our estimators to a coding intensity estimator similar to
 the Demographic Estimate of Coding Intensity (DECI), which is widely
-used by Medicare policymakers\textsuperscript{34,49}. DECI assumes
+used by Medicare policymakers\textsuperscript{18,38}. DECI assumes
 complete data (e.g., no censoring) and has the following formula:
 
 \[
 \begin{aligned}
 \\ \text{DECI} = \frac{\frac{\text{National average MA CMS-HCC risk score}}{\text{National average TM CMS-HCC risk score}}}{\frac{\text{National average MA demographic-only CMS-HCC risk score}}{\text{National average TM demographic-only CMS-HCC risk score}}}.
 \end{aligned}
-\] Here, the numerator is a risk score estimated with all HCCs included
-in the CMS-HCC formula, while the demographic-only risk adjustment risk
-score is estimated using only the demographic variables in that formula.
-Importantly, this also means that the estimand targeted by DECI is
-different from that of our proposed estimators. Further, as we did not
-have CMS-HCC risk score coefficients or demographic variables available
-in our simulated data, our comparator estimator was more precisely
-DECI-like and we defined it as: \[
+\]
+
+Here, the numerator is a risk score is estimated with both HCCs and
+demographic variables, while the denominator is estimated uses
+demographic variables only. Importantly, this also means that the
+estimand targeted by DECI is different from that of our proposed
+estimators. As we did not have CMS-HCC risk score coefficients or
+demographic variables available in our simulated data, our comparator
+estimator was more precisely DECI-like and defined as: \[
 \begin{aligned}
 \\ \text{DECI}^\dagger = \frac{\text{Average count of MA CMS-HCC HCCs}}{\text{Average count of TM CMS-HCC HCCs}}.
 \end{aligned}
-\] Our \(\text{DECI}^\dagger\) comparator is estimated in the same
-simulated data described earlier in this section, but relies on counts
-of all HCCs at the end of each monitoring period rather than time to
-incident coding of individual HCCs. Although DECI has a different target
-estimand than our estimators and ignores censoring, comparing our
-simulation results to the DECI-like estimator \(\text{DECI}^\dagger\) is
-useful as it illustrates how our estimators can be a complement to
-existing practice.
+\]\(\text{DECI}^\dagger\) is estimated in the same simulated data
+described earlier in this section, but relies on counts of all HCCs at
+the end of each monitoring period rather than time to incident coding of
+individual HCCs. Although DECI has a different target estimand than our
+estimators and ignores censoring, comparing our simulation results to
+\(\text{DECI}^\dagger\) is useful as it illustrates how our estimators
+can be a complement to existing practice.
 
-\subsection{Simulation results}\label{simulation-results}
+\subsection{\texorpdfstring{\texttt{upcoding} R
+package}{upcoding R package}}\label{upcoding-r-package}
 
-\subsubsection{Proposed estimators}\label{proposed-estimators}
+We developed the open source \texttt{upcoding} R package
+(https://github.com/StanfordHPDS/upcoding) to help address several
+issues in upcoding methods development by simulating longitudinal coding
+data for a Medicare-eligible population. Features include:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Simulating a sample of individuals with realistic baseline
+  HCCs}. To simulate realistic co-occurring HCCs not influenced by
+  coding incentives, sets of self-reported health conditions from
+  participants aged 65 years and older (i.e., Medicare eligible) were
+  extracted from the National Institutes of Health's All of Us
+  study\textsuperscript{39}. Baseline data were then simulated by
+  sampling with replacement from these sets of co-occurring HCCs, where
+  the respondent count weights sampling. The appendix includes survey
+  summary statistics. This project has an Institutional Review Board
+  exemption from All of Us because Stanford University has an
+  institutional Data Use and Registration Agreement with the program,
+  the data are anonymized, and we did not conduct human subjects
+  research with the data. Our study also does not share any individual
+  level All of Us data.
+\item
+  \textbf{Upcoding baseline data to a specified level over multiple time
+  points.} Users have the option to upcode any HCC using either
+  any-available or severity-based upcoding. This results in labeled
+  upcoding data, which is a useful resource for many types of coding
+  measurement and estimation.
+\item
+  \textbf{Undercoding baseline data to a specified level}. Users have
+  the option to specify an undercoding proportion, and that proportion
+  of all existing diagnoses are removed from the overall dataset. This
+  can help simulate data that is similar to TM as a comparison group for
+  analyses along with non-undercoded baseline data.
+\end{enumerate}
+
+We describe this functionality in further detail in the appendix.
+
+\subsection{Simulation study}\label{sec-simulation-study}
+
+Our simulation study demonstrates how the estimators we propose can be
+used to monitor Medicare coding behaviors. To do this, different
+upcoding and underreporting scenarios for the estimator of \(\psi\) were
+compared to estimates of \(\text{DECI}^\dagger\). Degrees of upcoding
+and undercoding were constructed to align with current estimates of
+these issues in MA and TM from the literature. In addition, the temporal
+structure was implemented to be analogous to quarterly reporting for the
+length of time (around two years) that a given risk adjustment formula
+version is typically in place. We did not use individual-level Medicare
+data given that labeled upcoding is not available. Each individual
+scenario was replicated 1000 times.
+
+In each replicate, two sets of 1,000,000 observations of baseline data
+were independently simulated using our \texttt{upcoding} package. For
+each dataset, the columns are the V28 HCCs (listed in appendix). Both
+any-available and severity-based upcoding were implemented in the first
+baseline data set (the MA data). For the former type of upcoding, an HCC
+without any competing HCCs (HCC238, Specified Heart Arrhythmias) was
+upcoded. For the latter we upcoded HCC125 (Dementia, Severe). HCC125's
+less severe HCCs are HCC126 (Dementia, Moderate) and HCC127 (Dementia,
+Mild or Unspecified). The scenarios implemented were as follows:
+
+\textbf{Scenario 1. Any-available upcoding of an HCC that lacks
+competing events (HCC238) with varying underreporting in the comparison
+group.} Baseline MA data were separately upcoded to varying degrees
+(20\%, 25\%, 30\%) sequentially within each monitoring period. The
+comparison group (i.e., TM data) was simulated by first undercoding the
+baseline TM data to varying levels (0\%, 5\%, 10\%, 15\%) and then
+upcoding HCC238 analogously but to a lower amount (5\%) per monitoring
+period.
+
+\textbf{Scenario 2. Lower-severity upcoding of an HCC with competing
+events (HCC125) with varying underreporting in the comparison group.}
+Baseline MA data were separately upcoded to varying degrees (20\%, 25\%,
+30\%) sequentially within each monitoring period. The comparison group
+was simulated by first undercoding the baseline TM data to varying
+levels (0\%, 5\%, 10\%, 15\%) and then upcoding HCC125 analogously but
+to a lower amount (5\%) per monitoring period.
+
+\section{Results}\label{results}
+
+\subsection{Proposed estimators}\label{proposed-estimators}
 
 Cumulative incidence of coding for scenario 1 given 20\% any-available
 upcoding in MA and 5\% any-available upcoding in TM after all four
@@ -917,47 +793,24 @@ is a consequence of the fixed sample we imposed across all monitoring
 periods. As monitoring periods increased, the number of individuals
 available to upcode decreased. Results plots for additional degrees of
 upcoding (25\%, 30\%) and Scenario 2 upcoding (severity-based upcoding
-for HCC125) are in the Supporting Information.
+for HCC125) are in the appendix.
 
-\begin{figure}[H]
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{images/enache_figure1.png}}
-
-}
-
-\caption{\label{fig-cif}\textbf{Cumulative incidence functions for the
-Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in
-simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups:
-20\% any-available MA upcoding.} Specified heart arrhythmias corresponds
-to HCC238, which does not have any competing events. For this HCC, 20\%
-of any-available individuals in the MA group are upcoded and 5\% of
-any-available individuals in the TM comparison group are upcoded. The
-first monitoring period is labeled M1, and the second monitoring period
-is labeled M2. Given the large sample size, confidence intervals are
-very narrow and are therefore omitted as they cannot be distinguished
-visually.}
-
-\end{figure}%
-
-Estimates corresponding to the Section~\ref{sec-2.3.2} estimators for
-upcoding of HCC238 are presented in Figure~\ref{fig-psi}, which examines
-the difference in time without reported incident HCC238 coding between
-MA and TM within each monitoring period. Examining the first monitoring
-period (M1), estimates clearly increase with the degree of upcoding.
-Similarly, for monitoring period 2 (M2) alone, estimates also increase
-with the degree of upcoding.
+Estimates corresponding to the \(\psi\) estimator for upcoding of HCC238
+are presented in Figure~\ref{fig-psi}, which examines the difference in
+time without reported incident HCC238 coding between MA and TM within
+each monitoring period. Examining the first monitoring period (M1),
+estimates clearly increase with the degree of upcoding. Similarly, for
+monitoring period 2 (M2) alone, estimates also increase with the degree
+of upcoding.
 
 In addition, undercoding has a limited effect on estimates. However,
 researchers also have the option to adjust for underreporting using the
-estimator proposed in Section~\ref{sec-underrep-estimator}. As the
-sample is fixed across monitoring periods, estimates across monitoring
-periods within a degree of upcoding and undercoding decrease,
-analogously to Figure~\ref{fig-cif}. The gap between M1 and M2 increases
-with degree of upcoding as well, because more aggressive incident
-upcoding in M1 limits the availability of individuals for incident
-upcoding in M2.
+estimator proposed for underreporting. As the sample is fixed across
+monitoring periods, estimates across monitoring periods within a degree
+of upcoding and undercoding decrease, analogously to
+Figure~\ref{fig-cif}. The gap between M1 and M2 increases with degree of
+upcoding as well, because more aggressive incident upcoding in M1 limits
+the availability of individuals for incident upcoding in M2.
 
 This suggests that within a monitoring period, researchers could compare
 estimates of different HCCs to obtain a ranked list of HCCs to study
@@ -966,88 +819,43 @@ coding. In addition, in this scenario, being in TM appeared to have a
 ``protective effect'' against being coded with HCC238, although
 supplemental analyses would be needed to account for possible
 confounding and other issues. Additional results plots for
-severity-based upcoding of HCC125 are available in the Supporting
-Information.
+severity-based upcoding of HCC125 are available in the appendix.
 
-\begin{figure}[H]
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{images/enache_figure2.png}}
-
-}
-
-\caption{\label{fig-psi}\textbf{Within-monitoring period period}
-\(\boldsymbol{\psi}\) \textbf{estimates} \textbf{for the Specified Heart
-Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare
-Advantage (MA) and Traditional Medicare (TM) groups.} Specified heart
-arrhythmias corresponds to HCC238, which does not have any competing
-events. For this HCC, any-available individuals in the MA group are
-upcoded to varying degrees and any-available individuals in the TM
-comparison group are upcoded 5\%. Given the large sample size,
-confidence intervals are very narrow and are therefore omitted as they
-cannot be distinguished visually.}
-
-\end{figure}%
-
-\subsubsection{Comparator estimator}\label{comparator-estimator}
+\subsection{Comparator estimator}\label{comparator-estimator}
 
 Figure~\ref{fig-deci} shows the average \(\text{DECI}^\dagger\) estimate
 across simulation replicates by monitoring period as well as upcoding
 and undercoding degree. As degree of upcoding increases, these estimates
 increase negligibly both for individual monitoring periods and across
 sequential monitoring periods. This is intuitive--only two of the 115
-HCCs in the MA risk adjustment algorithm are being upcoded--but it
+HCCs in the current MA risk adjustment algorithm are being upcoded--but
 suggests a limitation of DECI in identifying upcoding occurring in a
 minority of HCCs. Regardless of upcoding degree, the
 \(\text{DECI}^\dagger\) estimate increasing in line with the degree of
 TM undercoding indicates that it may be more sensitive to undercoding in
 TM. Especially since we know undercoding is prevalent in
-TM\textsuperscript{28,33}, this suggests that DECI may be
-misrepresenting the overall spending gap between MA and TM due to its
-undercoding sensitivity.
-
-\begin{figure}[H]
-
-\centering{
-
-\pandocbounded{\includegraphics[keepaspectratio]{images/enache_figure3.png}}
-
-}
-
-\caption{\label{fig-deci}\(\textbf{DECI}^\dagger\) \textbf{estimate
-across all Medicare Advantage (MA) Version 28 Hierarchical Condition
-Categories (HCCs) at varying degrees of upcoding and underreporting in
-simulated MA and Traditional Medicare (TM) groups.} Three separate
-degrees of MA group upcoding occur sequentially over each monitoring
-period in HCC238 (any-available) and HCC125 (lower severity) only. The
-TM group is upcoded 5\% sequentially for the same HCCs over equivalent
-periods. Given the large sample size, confidence intervals are very
-narrow and are therefore omitted as they cannot be distinguished
-visually.}
-
-\end{figure}%
+TM\textsuperscript{3,16}, this suggests that DECI may be underestimating
+overall spending gap between MA and TM.
 
 \section{Discussion}\label{discussion}
 
 We proposed a set of estimators that extend RMTL methodology for
 evaluating time to incident coding by private insurers in Medicare.
-Given the timeline of risk adjustment formula updates, our approach
-realistically presupposes that reported coding is examined over multiple
-monitoring periods, each of which has several time points where new
-events are reported. Novel estimators were introduced to evaluate
-differences in time-to-reporting both within monitoring periods and
-across monitoring periods, including an estimator for severity-based
-upcoding. Our approach also included an adjustment for possible
-underreporting, which is a known major issue in TM
-data\textsuperscript{28,33}. Finally, we developed an open source R
-package that enables users to simulate co-occurring HCCs free of coding
-incentives and similar to those reported by individuals residing in the
-United States eligible for Medicare. Users can also undercode or upcode
-this data over time.
+Given the timeline of CMS-HCC updates, our approach realistically
+presupposes that reported coding is examined over multiple monitoring
+periods, each of which has several time points where new events are
+reported. Novel estimators were introduced to evaluate differences in
+time-to-reporting both within monitoring periods and across monitoring
+periods, including an estimator for severity-based upcoding. Our
+approach also included an adjustment for possible underreporting, which
+is a known major issue in TM data\textsuperscript{3,16}. Finally, we
+developed an open source R package that enables users to simulate
+co-occurring HCCs free of coding incentives and similar to those
+reported by individuals residing in the United States eligible for
+Medicare. Users can also undercode or upcode this data over time.
 
 Our simulated data were upcoded to degrees aligned to those reported in
-literature\textsuperscript{32}, and we found in our simulation results
+literature\textsuperscript{7}, and we found in our simulation results
 that our estimators were able to recover differences in upcoding both
 within and across monitoring periods while showing limited sensitivity
 to undercoding. DECI-like estimates of the same data were a useful
@@ -1064,19 +872,21 @@ This work has a number of limitations and areas for future development.
 First, several assumptions could be further relaxed. This includes our
 assumptions that the population is fixed across both comparison groups
 and monitoring periods and that estimates in sequential monitoring
-periods across groups are approximately independent. Upcoding estimators
-could be expanded to additional types of upcoding and to correct for
-underreporting. Covariates could also be incorporated into estimation,
-which would be useful for addressing issues like confounding. There is
-also more heterogeneity and missingness in real-world claims data than
-was included in our simulations. Self-reported diagnoses--as we use in
-our simulated baseline data--also have recall bias and other issues that
-we do not address here.
+periods across groups are approximately independent. However, doing so
+could also make establishing a diagnosis as incident and comparing
+estimates across monitoring periods more challenging. Upcoding
+estimators could be expanded to additional types of upcoding and to
+correct for underreporting. Covariates could also be incorporated into
+estimation to better address issues like confounding. There is also more
+heterogeneity and missingness in real-world claims data than was
+included in our simulations. Self-reported diagnoses---as we use in our
+simulated baseline data---also have recall bias and other issues that we
+do not address here.
 
 Since the MA program's inception, high intensity of private insurer
 coding, including possible upcoding, is estimated to have cost the
 federal government and taxpayers \$224 billion dollars without clear
-benefit to beneficiaries\textsuperscript{32}. Thus, estimating
+benefit to beneficiaries\textsuperscript{7}. Thus, estimating
 differences in coding between MA and TM or more and less severe
 competing HCCs has the potential to help policymakers locate issues with
 specific HCCs earlier and at scale. This could suggest areas for
@@ -1084,6 +894,116 @@ improvement in the risk adjustment formula and potentially save
 significant funds in the Medicare program. Our work has provided both
 novel estimators and novel simulated data tailored to addressing these
 important policy considerations.
+
+\newpage{}
+
+\section{Figures}\label{figures}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=0.6\linewidth,height=\textheight,keepaspectratio]{images/enache_figure1.png}
+
+}
+
+\caption{\label{fig-schematic}\textbf{Schematic figure of notation for
+evaluating coding intensity of the Hierarchical Condition Category (HCC)
+denoted by} \(s\): This HCC is assumed to have no competing events. The
+visuals and notation in this figure illustrate components of the
+difference in mean time without event across groups estimator, or
+\(\psi\), within two separate monitoring periods. \(\psi\) corresponds
+to the difference of restricted mean time lost up until a pre-specified
+end time \(\tau\) between a group \(g\) of interest (\(g=1\), e.g.,
+Medicare Advantage) and a reference group (\(g=0\), e.g., Traditional
+Medicare). Other reporting time points within each monitoring period are
+denoted \(t_1\), \(t_2\), and \(t_3\) and also have an optional
+subscript \(m\) to denote which monitoring period it corresponds to of
+the two shown.}
+
+\end{figure}%
+
+\newpage{}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=0.9\linewidth,height=\textheight,keepaspectratio]{images/enache_figure2.png}
+
+}
+
+\caption{\label{fig-cif}\textbf{Cumulative incidence functions for the
+Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in
+simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups:
+20\% any-available MA upcoding.} 20\% any-available MA upcoding.
+Specified heart arrhythmias corresponds to HCC238, which does not have
+any competing events. For this HCC, 20\% of any-available individuals in
+the MA group are upcoded and 5\% of any-available individuals in the TM
+comparison group are upcoded. The first monitoring period is labeled M1,
+and the second monitoring period is labeled M2. Given the large sample
+size, confidence intervals are very narrow and are therefore omitted as
+they cannot be distinguished visually.}
+
+\end{figure}%
+
+\newpage{}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=0.9\linewidth,height=\textheight,keepaspectratio]{images/enache_figure3.png}
+
+}
+
+\caption{\label{fig-psi}\textbf{Within-monitoring period period}
+\(\boldsymbol{\psi}\) \textbf{estimates} \textbf{for the Specified Heart
+Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare
+Advantage (MA) and Traditional Medicare (TM) groups.} \(\widehat{\psi}\)
+corresponds to the proposed estimator for \(\psi\), or the difference in
+mean time without event (i.e., incident coding of the HCC) across
+groups. Specified heart arrhythmias corresponds to HCC238, which does
+not have any competing events. For this HCC, any-available individuals
+in the MA group are upcoded to varying degrees and any-available
+individuals in the TM comparison group are upcoded 5\%. The first
+monitoring period is labeled M1, and the second monitoring period is
+labeled M2. Given the large sample size, confidence intervals are very
+narrow and are therefore omitted as they cannot be distinguished
+visually.}
+
+\end{figure}%
+
+\newpage{}
+
+\begin{figure}[H]
+
+\centering{
+
+\includegraphics[width=0.9\linewidth,height=\textheight,keepaspectratio]{images/enache_figure4.png}
+
+}
+
+\caption{\label{fig-deci}\(\textbf{DECI}^\dagger\) \textbf{estimate
+across all Medicare Advantage (MA) Version 28 Hierarchical Condition
+Categories (HCCs) at varying degrees of upcoding and underreporting in
+simulated MA and Traditional Medicare (TM) groups.} The Demographic
+Estimate of Coding Intensity (DECI) is an estimator widely used by
+policymakers to evaluate coding intensity within a year by comparing
+ratios of average risk scores in MA versus TM; \(\text{DECI}^\dagger\)
+is our slight modification of this estimand due to data availability,
+and \(\widehat{\text{DECI}}^\dagger\) is its estimate. Three separate
+degrees of MA group upcoding occur sequentially over each monitoring
+period in HCC238 (any-available) and HCC125 (lower severity) only. The
+TM group is upcoded 5\% sequentially for the same HCCs over equivalent
+periods. The first monitoring period is labeled M1, and the second
+monitoring period is labeled M2. Given the large sample size, confidence
+intervals are very narrow and are therefore omitted as they cannot be
+distinguished visually.}
+
+\end{figure}%
+
+\newpage{}
 
 \section{Acknowledgments}\label{acknowledgments}
 
@@ -1094,348 +1014,302 @@ Neha Srivathsa for their valuable insights and contributions to code
 performance and review. We gratefully acknowledge All of Us participants
 for their contributions, without whom this research would not have been
 possible. We also thank the National Institutes of Health's All of Us
-Research Program
-(\href{http://127.0.0.1:19869/\#0}{https://allofus.nih.gov/}) for making
-available the participant survey data included in this study. We thank
-Stanford University and Stanford Research Computing for providing
-additional computational resources, including support for computing
-performed on the Sherlock cluster.
+Research Program (https://allofus.nih.gov/) for making available the
+participant survey data included in this study. We thank Stanford
+University and Stanford Research Computing for providing additional
+computational resources, including support for computing performed on
+the Sherlock cluster.
 
-\section{Data availability statement}\label{data-availability-statement}
+\section{Conflict of interest
+statement}\label{conflict-of-interest-statement}
 
-The simulated data for this study can be generated using code in the
-project repository:
-\url{https://github.com/StanfordHPDS/tte_estimation_medicare}.
-Additional upcoding, undercoding, and baseline data can be simulated
-using the upcoding package
-(\url{https://github.com/StanfordHPDS/upcoding}). In line with program
-policies, non-summarized version 7 All of Us survey data used to derive
-baseline co-occurring HCCs can be accessed by authorized users via the
-All of Us Researcher Workbench only
-(\url{https://www.researchallofus.org/data-tools/workbench/}) and
-requires Registered Tier access. Code that was used for this project in
-the Researcher Workbench is in the above project repository.
+None to report.
 
-\section{Supporting Information}\label{supporting-information}
-
-Additional study summary information and results can be found online in
-the Supporting Information.
-
-\newpage
+\newpage{}
 
 \section*{References}\label{references}
 \addcontentsline{toc}{section}{References}
 
 \phantomsection\label{refs}
 \begin{CSLReferences}{0}{1}
-\bibitem[\citeproctext]{ref-Hernan2010-qs}
-\CSLLeftMargin{1. }%
-\CSLRightInline{Hernán MA. The hazards of hazard ratios.
-\emph{Epidemiology}. 2010;21(1):13-15.}
-
-\bibitem[\citeproctext]{ref-Chappell2016-gr}
-\CSLLeftMargin{2. }%
-\CSLRightInline{Chappell R, Zhu X. Describing differences in survival
-curves. \emph{JAMA Oncol}. 2016;2(7):906-907.}
-
-\bibitem[\citeproctext]{ref-Uno2020-hk}
-\CSLLeftMargin{3. }%
-\CSLRightInline{Uno H, Horiguchi M, Hassett MJ. Statistical
-test/estimation methods used in contemporary phase {III} cancer
-randomized controlled trials with time-to-event outcomes.
-\emph{Oncologist}. 2020;25(2):91-93.}
-
-\bibitem[\citeproctext]{ref-Jachno2019-bk}
-\CSLLeftMargin{4. }%
-\CSLRightInline{Jachno K, Heritier S, Wolfe R. Are non-constant rates
-and non-proportional treatment effects accounted for in the design and
-analysis of randomised controlled trials? A review of current practice.
-\emph{BMC Med Res Methodol}. 2019;19(1):103.}
-
-\bibitem[\citeproctext]{ref-Trinquart2016-cv}
-\CSLLeftMargin{5. }%
-\CSLRightInline{Trinquart L, Jacot J, Conner SC, Porcher R. Comparison
-of treatment effects measured by the hazard ratio and by the ratio of
-restricted mean survival times in oncology randomized controlled trials.
-\emph{J Clin Oncol}. 2016;34(15):1813-1819.}
-
-\bibitem[\citeproctext]{ref-Tian2014-xr}
-\CSLLeftMargin{6. }%
-\CSLRightInline{Tian L, Zhao L, Wei LJ. Predicting the restricted mean
-event time with the subject's baseline covariates in survival analysis.
-\emph{Biostatistics}. 2014;15(2):222-233.}
-
-\bibitem[\citeproctext]{ref-Tian2020-sw}
-\CSLLeftMargin{7. }%
-\CSLRightInline{Tian L, Jin H, Uno H, et al. On the empirical choice of
-the time window for restricted mean survival time. \emph{Biometrics}.
-2020;76(4):1157-1166.}
-
-\bibitem[\citeproctext]{ref-Austin2017-nm}
-\CSLLeftMargin{8. }%
-\CSLRightInline{Austin PC, Fine JP. Accounting for competing risks in
-randomized controlled trials: A review and recommendations for
-improvement. \emph{Stat Med}. 2017;36(8):1203-1209.}
-
-\bibitem[\citeproctext]{ref-Geskus2020-tb}
-\CSLLeftMargin{9. }%
-\CSLRightInline{Geskus RB. \emph{Data Analysis with Competing Risks and
-Intermediate States}. 1st Edition. Chapman \& Hall/CRC; 2020.}
-
-\bibitem[\citeproctext]{ref-Conner2021-ac}
-\CSLLeftMargin{10. }%
-\CSLRightInline{Conner SC, Trinquart L. Estimation and modeling of the
-restricted mean time lost in the presence of competing risks. \emph{Stat
-Med}. 2021;40(9):2177-2196.}
-
-\bibitem[\citeproctext]{ref-Irwin1949-ez}
-\CSLLeftMargin{11. }%
-\CSLRightInline{Irwin JO. The standard error of an estimate of
-expectation of life, with special reference to expectation of tumourless
-life in experiments with mice. \emph{J Hyg (Lond)}. 1949;47(2):188.}
-
-\bibitem[\citeproctext]{ref-Royston2011-sz}
-\CSLLeftMargin{12. }%
-\CSLRightInline{Royston P, Parmar MKB. The use of restricted mean
-survival time to estimate the treatment effect in randomized clinical
-trials when the proportional hazards assumption is in doubt. \emph{Stat
-Med}. 2011;30(19):2409-2421.}
-
-\bibitem[\citeproctext]{ref-Uno2014-ul}
-\CSLLeftMargin{13. }%
-\CSLRightInline{Uno H, Claggett B, Tian L, et al. Moving beyond the
-hazard ratio in quantifying the between-group difference in survival
-analysis. \emph{J Clin Oncol}. 2014;32(22):2380-2385.}
-
-\bibitem[\citeproctext]{ref-Zhao2016-ca}
-\CSLLeftMargin{14. }%
-\CSLRightInline{Zhao L, Claggett B, Tian L, et al. On the restricted
-mean survival time curve in survival analysis: On the restricted mean
-survival time curve in survival analysis. \emph{Biometrics}.
-2016;72(1):215-221.}
-
-\bibitem[\citeproctext]{ref-Lu2021-yb}
-\CSLLeftMargin{15. }%
-\CSLRightInline{Lu Y, Tian L. Statistical considerations for sequential
-analysis of the restricted mean survival time for randomized clinical
-trials. \emph{Stat Biopharm Res}. 2021;13(2):210-218.}
-
-\bibitem[\citeproctext]{ref-Zhang2025-xi}
-\CSLLeftMargin{16. }%
-\CSLRightInline{Zhang P, Logan B, Martens M. Covariate-adjusted group
-sequential comparisons of restricted mean survival times. \emph{arXiv
-{[}statME{]}}. Published online September 2025.}
-
-\bibitem[\citeproctext]{ref-Paukner2021-jj}
-\CSLLeftMargin{17. }%
-\CSLRightInline{Paukner M, Chappell R. Window mean survival time.
-\emph{Stat Med}. 2021;40(25):5521-5533.}
-
-\bibitem[\citeproctext]{ref-Sun2025-xq}
-\CSLLeftMargin{18. }%
-\CSLRightInline{Sun J, Schaubel DE, Tchetgen EJT. Beyond fixed
-restriction time: Adaptive restricted mean survival time methods in
-clinical trials. \emph{arXiv {[}statME{]}}. Published online January
-2025.}
-
-\bibitem[\citeproctext]{ref-Horiguchi2020-al}
-\CSLLeftMargin{19. }%
-\CSLRightInline{Horiguchi M, Uno H. On permutation tests for comparing
-restricted mean survival time with small sample from randomized trials.
-\emph{Stat Med}. 2020;39(20):2655-2670.}
-
-\bibitem[\citeproctext]{ref-Ditzhaus2023-fz}
-\CSLLeftMargin{20. }%
-\CSLRightInline{Ditzhaus M, Yu M, Xu J. Studentized permutation method
-for comparing two restricted mean survival times with small sample from
-randomized trials. \emph{Stat Med}. 2023;42(13):2226-2240.}
-
-\bibitem[\citeproctext]{ref-Munko2024-ov}
-\CSLLeftMargin{21. }%
-\CSLRightInline{Munko M, Ditzhaus M, Dobler D, Genuneit J. {RMST}-based
-multiple contrast tests in general factorial designs. \emph{Stat Med}.
-2024;43(10):1849-1866.}
-
-\bibitem[\citeproctext]{ref-Jesse2024-bx}
-\CSLLeftMargin{22. }%
-\CSLRightInline{Jesse D, Huber C, Friede T. Comparing restricted mean
-survival times in small sample clinical trials using
-pseudo-observations. \emph{arXiv {[}statME{]}}. Published online August
-2024.}
-
-\bibitem[\citeproctext]{ref-Andersen2013-jm}
-\CSLLeftMargin{23. }%
-\CSLRightInline{Andersen PK. Decomposition of number of life years lost
-according to causes of death. \emph{Stat Med}. 2013;32(30):5278-5285.}
-
-\bibitem[\citeproctext]{ref-Calkins2018-ed}
-\CSLLeftMargin{24. }%
-\CSLRightInline{Calkins KL, Canan CE, Moore RD, Lesko CR, Lau B. An
-application of restricted mean survival time in a competing risks
-setting: Comparing time to {ART} initiation by injection drug use.
-\emph{BMC Med Res Methodol}. 2018;18(1):27.}
-
-\bibitem[\citeproctext]{ref-Wu2022-mx}
-\CSLLeftMargin{25. }%
-\CSLRightInline{Wu H, Yuan H, Yang Z, Hou Y, Chen Z. Implementation of
-an alternative method for assessing competing risks: Restricted mean
-time lost. \emph{Am J Epidemiol}. 2022;191(1):163-172.}
-
 \bibitem[\citeproctext]{ref-Ochieng2025-bv}
-\CSLLeftMargin{26. }%
-\CSLRightInline{Ochieng N, Cubanski J, Neuman T. A snapshot of sources
-of coverage among medicare beneficiaries. Published online December
-2025.}
+\CSLLeftMargin{1. }%
+\CSLRightInline{Ochieng N, Cubanski J, Neuman T. {A Snapshot of Sources
+of Coverage Among Medicare Beneficiaries}. Published online December
+2025. Accessed January 1, 2025.
+\url{https://www.kff.org/medicare/issue-brief/a-snapshot-of-sources-of-coverage-among-medicare-beneficiaries/}}
 
 \bibitem[\citeproctext]{ref-Pope2004-tv}
-\CSLLeftMargin{27. }%
-\CSLRightInline{Pope GC, Kautter J, Ellis RP, et al. Risk adjustment of
-medicare capitation payments using the {CMS-HCC} model. \emph{Health
-Care Financ Rev}. 2004;25(4):119-141.}
+\CSLLeftMargin{2. }%
+\CSLRightInline{Pope GC, Kautter J, Ellis RP, et al. {Risk Adjustment of
+Medicare Capitation Payments Using the CMS-HCC Model}. \emph{Health Care
+Financ Rev}. 2004;25(4):119-141.
+\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4194896/pdf/hcfr-25-4-119.pdf}}
 
 \bibitem[\citeproctext]{ref-Ellis2018-mr}
-\CSLLeftMargin{28. }%
-\CSLRightInline{Ellis RP, Martins B, Rose S. Chapter 3 - risk adjustment
-for health plan payment. In: McGuire TG, Kleef RC van, eds. \emph{Risk
-Adjustment, Risk Sharing and Premium Regulation in Health Insurance
-Markets}. Academic Press; 2018:55-104.}
+\CSLLeftMargin{3. }%
+\CSLRightInline{Ellis RP, Martins B, Rose S. {Chapter 3 - Risk
+Adjustment for Health Plan Payment}. In: McGuire TG, Kleef RC van, eds.
+\emph{{Risk Adjustment, Risk Sharing and Premium Regulation in Health
+Insurance Markets}}. Academic Press; 2018:55-104.
+doi:\href{https://doi.org/10.1016/B978-0-12-811325-7.00003-8}{10.1016/B978-0-12-811325-7.00003-8}}
 
 \bibitem[\citeproctext]{ref-Centers_for_Medicare_and_Medicaid_Services2023-zf}
-\CSLLeftMargin{29. }%
-\CSLRightInline{Centers for Medicare and Medicaid Services. \emph{2024
-{MA} Advance Notice}.; 2023.}
+\CSLLeftMargin{4. }%
+\CSLRightInline{Centers for Medicare \& Medicaid Services. {Advance
+Notice of Methodological Changes for Calendar Year (CY) 2024 for
+Medicare Advantage (MA) Capitation Rates and Part C and Part D Payment
+Policies}. Published online February 1, 2023. Accessed June 15, 2024.
+\url{https://www.cms.gov/files/document/2024-advance-notice-pdf.pdf}}
 
 \bibitem[\citeproctext]{ref-geruso2020}
-\CSLLeftMargin{30. }%
-\CSLRightInline{Geruso M, Layton T. Upcoding: Evidence from Medicare on
-Squishy Risk Adjustment. \emph{Journal of Political Economy}.
-2020;128(3):984-1026.
+\CSLLeftMargin{5. }%
+\CSLRightInline{Geruso M, Layton T. {Upcoding: Evidence from Medicare on
+Squishy Risk Adjustment}. \emph{{J Polit Econ}}. 2020;128(3):984-1026.
 doi:\href{https://doi.org/10.1086/704756}{10.1086/704756}}
 
 \bibitem[\citeproctext]{ref-joiner2024}
-\CSLLeftMargin{31. }%
-\CSLRightInline{Joiner KA, Lin J, Pantano J. Upcoding in medicare: where
-does it matter most? \emph{Health Economics Review}. 2024;14(1).
+\CSLLeftMargin{6. }%
+\CSLRightInline{Joiner KA, Lin J, Pantano J. {Upcoding in Medicare:
+Where Does it Matter Most?} \emph{{Health Econ Rev}}. 2024;14(1).
 doi:\href{https://doi.org/10.1186/s13561-023-00465-4}{10.1186/s13561-023-00465-4}}
 
 \bibitem[\citeproctext]{ref-Medpac2025-uh}
-\CSLLeftMargin{32. }%
-\CSLRightInline{Medicare Payment Advisory Commission. March 2025 report
-to the congress: Medicare payment policy. Published online March 2025.}
+\CSLLeftMargin{7. }%
+\CSLRightInline{Medicare Payment Advisory Commission. {Report to the
+Congress: Medicare Payment Policy}. Published online March 2025.
+Accessed March 17, 2025.
+\url{https://www.medpac.gov/wp-content/uploads/2025/03/Mar25_MedPAC_Report_To_Congress_SEC-1.pdf}}
+
+\bibitem[\citeproctext]{ref-Abelson2023-gr}
+\CSLLeftMargin{8. }%
+\CSLRightInline{Abelson R, Sanger-Katz M. {New Medicare Rule Aims to
+Take Back \$4.7 Billion from Insurers}. \emph{The New York Times}.
+Published online January 2023. Accessed February 1, 2023.
+\url{https://www.nytimes.com/2023/01/30/upshot/medicare-overbilling-biden-rule.html}}
+
+\bibitem[\citeproctext]{ref-Centers_for_Medicare_Medicaid_Services2023-dy}
+\CSLLeftMargin{9. }%
+\CSLRightInline{Centers for Medicare \& Medicaid Services, United States
+Department of Health and Human Services. {Medicare and Medicaid
+Programs; Policy and Technical Changes to the Medicare Advantage,
+Medicare Prescription Drug Benefit, Program of All-Inclusive Care for
+the Elderly (PACE), Medicaid Fee-For-Service, and Medicaid Managed Care
+Programs for Years 2020 and 2021}. \emph{Federal Register 88 FR 6643}.
+Published online February 1, 2023:6643-6665. Accessed June 5, 2023.
+\url{https://www.federalregister.gov/d/2023-01942}}
+
+\bibitem[\citeproctext]{ref-Constantino2025-qf}
+\CSLLeftMargin{10. }%
+\CSLRightInline{Constantino AK. {UnitedHealth Says it is Cooperating
+with DOJ Investigations into Medicare Billing Practices}. \emph{Consumer
+News and Business Channel}. Published online July 24, 2025. Accessed
+November 6, 2025.
+\url{https://www.cnbc.com/2025/07/24/unitedhealthcare-doj-investigation-medicare-billing.html}}
+
+\bibitem[\citeproctext]{ref-DOJ2026-vd}
+\CSLLeftMargin{11. }%
+\CSLRightInline{United States Department of Justice, Office of Public
+Affairs. {Kaiser Permanente Affiliates Pay \$556M to Resolve False
+Claims Act Allegations}. Published online January 14, 2026. Accessed
+January 15, 2026.
+\url{https://www.justice.gov/opa/pr/kaiser-permanente-affiliates-pay-556m-resolve-false-claims-act-allegations}}
+
+\bibitem[\citeproctext]{ref-rose2016}
+\CSLLeftMargin{12. }%
+\CSLRightInline{Rose S, Zaslavsky AM, McWilliams JM. Variation in
+Accountable Care Organization Spending and Sensitivity to Risk
+Adjustment: Implications for Benchmarking. \emph{Health Aff}.
+2016;35(3):440-448.
+doi:\href{https://doi.org/10.1377/hlthaff.2015.1026}{10.1377/hlthaff.2015.1026}}
+
+\bibitem[\citeproctext]{ref-chernew2021}
+\CSLLeftMargin{13. }%
+\CSLRightInline{Chernew ME, Carichner J, Impreso J, et al. Coding-Driven
+Changes in Measured Risk in Accountable Care Organizations. \emph{Health
+Aff}. 2021;40(12):1909-1917.
+doi:\href{https://doi.org/10.1377/hlthaff.2021.00361}{10.1377/hlthaff.2021.00361}}
+
+\bibitem[\citeproctext]{ref-McWilliams2025-hz}
+\CSLLeftMargin{14. }%
+\CSLRightInline{McWilliams JM, Weinreb G, Landrum MB, Chernew ME. {Use
+of Patient Health Survey Data for Risk Adjustment to Limit Distortionary
+Coding Incentives in Medicare}. \emph{Health Aff}. 2025;44(1):48-57.
+doi:\href{https://doi.org/10.1377/hlthaff.2023.01351}{10.1377/hlthaff.2023.01351}}
+
+\bibitem[\citeproctext]{ref-McGuire2025-bp}
+\CSLLeftMargin{15. }%
+\CSLRightInline{McGuire TG, Enache OM, Chernew M, McWilliams JM, Nham T,
+Rose S. {Incidence, Persistence, and Steady-State Prevalence in Coding
+Intensity for Health Plan Payment}. \emph{Health Serv Res}.
+2026;61(1):e70065.
+doi:\href{https://doi.org/10.1111/1475-6773.70065}{10.1111/1475-6773.70065}}
 
 \bibitem[\citeproctext]{ref-Ghoshal-Datta2024-io}
-\CSLLeftMargin{33. }%
-\CSLRightInline{Ghoshal-Datta N, Chernew ME, McWilliams JM. Lack of
-persistent coding in traditional medicare may widen the risk-score gap
-with medicare advantage. \emph{Health Aff (Millwood)}.
-2024;43(12):1638-1646.}
+\CSLLeftMargin{16. }%
+\CSLRightInline{Ghoshal-Datta N, Chernew ME, McWilliams JM. {Lack of
+Persistent Coding in Traditional Medicare May Widen the Risk-Score Gap
+with Medicare Advantage}. \emph{Health Aff}. 2024;43(12):1638-1646.
+doi:\href{https://doi.org/10.1377/hlthaff.2024.00169}{10.1377/hlthaff.2024.00169}}
+
+\bibitem[\citeproctext]{ref-jacobs2018}
+\CSLLeftMargin{17. }%
+\CSLRightInline{Jacobs PD, Kronick R. {Getting What We Pay For: How Do
+Risk-Based Payments to Medicare Advantage Plans Compare with Alternative
+Measures of Beneficiary Health Risk?} \emph{Health Serv Res}.
+2018;53(6):4997-5015.
+doi:\href{https://doi.org/10.1111/1475-6773.12977}{10.1111/1475-6773.12977}}
 
 \bibitem[\citeproctext]{ref-kronick2021a}
-\CSLLeftMargin{34. }%
+\CSLLeftMargin{18. }%
 \CSLRightInline{Kronick R, Chua FM. Industry-Wide and Sponsor-Specific
 Estimates of Medicare Advantage Coding Intensity. \emph{SSRN Electronic
 Journal}. Published online 2021.
 doi:\href{https://doi.org/10.2139/ssrn.3959446}{10.2139/ssrn.3959446}}
 
-\bibitem[\citeproctext]{ref-jacobs2018}
+\bibitem[\citeproctext]{ref-James2021-ej}
+\CSLLeftMargin{19. }%
+\CSLRightInline{James G, Witten D, Hastie T, Tibshirani R. \emph{{An
+Introduction to Statistical Learning: with Applications in R}}. 2nd ed.
+Springer; 2021.}
+
+\bibitem[\citeproctext]{ref-Geskus2020-tb}
+\CSLLeftMargin{20. }%
+\CSLRightInline{Geskus RB. \emph{Data Analysis with Competing Risks and
+Intermediate States}. 1st ed. Chapman \& Hall/CRC; 2015.}
+
+\bibitem[\citeproctext]{ref-Hernan2010-qs}
+\CSLLeftMargin{21. }%
+\CSLRightInline{Hernán MA. {The Hazards of Hazard Ratios}.
+\emph{Epidemiology}. 2010;21(1):13-15.
+doi:\href{https://doi.org/10.1097/EDE.0b013e3181c1ea43}{10.1097/EDE.0b013e3181c1ea43}}
+
+\bibitem[\citeproctext]{ref-Chappell2016-gr}
+\CSLLeftMargin{22. }%
+\CSLRightInline{Chappell R, Zhu X. {Describing Differences in Survival
+Curves}. \emph{JAMA Oncol}. 2016;2(7):906-907.
+doi:\href{https://doi.org/10.1001/jamaoncol.2016.0001}{10.1001/jamaoncol.2016.0001}}
+
+\bibitem[\citeproctext]{ref-Uno2020-hk}
+\CSLLeftMargin{23. }%
+\CSLRightInline{Uno H, Horiguchi M, Hassett MJ. {Statistical
+Test/Estimation Methods Used in Contemporary Phase III Cancer Randomized
+Controlled Trials with Time-to-Event Outcomes}. \emph{Oncologist}.
+2020;25(2):91-93.
+doi:\href{https://doi.org/10.1634/theoncologist.2019-0464}{10.1634/theoncologist.2019-0464}}
+
+\bibitem[\citeproctext]{ref-Jachno2019-bk}
+\CSLLeftMargin{24. }%
+\CSLRightInline{Jachno K, Heritier S, Wolfe R. {Are Non-Constant Rates
+and Non-Proportional Treatment Effects Accounted For in the Design and
+Analysis of Randomised Controlled Trials? A Review of Current Practice}.
+\emph{{BMC Med Res Methodol}}. 2019;19(1):103.
+doi:\href{https://doi.org/10.1186/s12874-019-0749-1}{10.1186/s12874-019-0749-1}}
+
+\bibitem[\citeproctext]{ref-Tian2014-xr}
+\CSLLeftMargin{25. }%
+\CSLRightInline{Tian L, Zhao L, Wei LJ. {Predicting the Restricted Mean
+Event Time with the Subject's Baseline Covariates in Survival Analysis}.
+\emph{Biostatistics}. 2014;15(2):222-233.
+doi:\href{https://doi.org/10.1093/biostatistics/kxt050}{10.1093/biostatistics/kxt050}}
+
+\bibitem[\citeproctext]{ref-Trinquart2016-cv}
+\CSLLeftMargin{26. }%
+\CSLRightInline{Trinquart L, Jacot J, Conner SC, Porcher R. {Comparison
+of Treatment Effects Measured by the Hazard Ratio and by the Ratio of
+Restricted Mean Survival Times in Oncology Randomized Controlled
+Trials}. \emph{{J Clin Oncol}}. 2016;34(15):1813-1819.
+doi:\href{https://doi.org/10.1200/JCO.2015.64.2488}{10.1200/JCO.2015.64.2488}}
+
+\bibitem[\citeproctext]{ref-Tian2020-sw}
+\CSLLeftMargin{27. }%
+\CSLRightInline{Tian L, Jin H, Uno H, et al. {On the Empirical Choice of
+the Time Window for Restricted Mean Survival Time}. \emph{Biometrics}.
+2020;76(4):1157-1166.
+doi:\href{https://doi.org/10.1111/biom.13237}{10.1111/biom.13237}}
+
+\bibitem[\citeproctext]{ref-Austin2017-nm}
+\CSLLeftMargin{28. }%
+\CSLRightInline{Austin PC, Fine JP. {Accounting for Competing Risks in
+Randomized Controlled Trials: a Review and Recommendations for
+Improvement}. \emph{Stat Med}. 2017;36(8):1203-1209.
+doi:\href{https://doi.org/10.1002/sim.7215}{10.1002/sim.7215}}
+
+\bibitem[\citeproctext]{ref-Conner2021-ac}
+\CSLLeftMargin{29. }%
+\CSLRightInline{Conner SC, Trinquart L. {Estimation and Modeling of the
+Restricted Mean Time Lost in the Presence of Competing Risks}.
+\emph{Stat Med}. 2021;40(9):2177-2196.
+doi:\href{https://doi.org/10.1002/sim.8896}{10.1002/sim.8896}}
+
+\bibitem[\citeproctext]{ref-Irwin1949-ez}
+\CSLLeftMargin{30. }%
+\CSLRightInline{Irwin JO. {The Standard Error of an Estimate of
+Expectation of Life, with Special Reference to Expectation of Tumourless
+Life in Experiments with Mice}. \emph{{J Hyg (Lond)}}. 1949;47(2):188.
+doi:\href{https://doi.org/10.1017/s0022172400014443}{10.1017/s0022172400014443}}
+
+\bibitem[\citeproctext]{ref-Royston2011-sz}
+\CSLLeftMargin{31. }%
+\CSLRightInline{Royston P, Parmar MKB. {The Use of Restricted Mean
+Survival Time to Estimate the Treatment Effect in Randomized Clinical
+Trials when the Proportional Hazards Assumption is in Doubt}. \emph{Stat
+Med}. 2011;30(19):2409-2421.
+doi:\href{https://doi.org/10.1002/sim.4274}{10.1002/sim.4274}}
+
+\bibitem[\citeproctext]{ref-Uno2014-ul}
+\CSLLeftMargin{32. }%
+\CSLRightInline{Uno H, Claggett B, Tian L, et al. {Moving Beyond the
+Hazard Ratio in Quantifying the Between-Group Difference in Survival
+Analysis}. \emph{J Clin Oncol}. 2014;32(22):2380-2385.
+doi:\href{https://doi.org/10.1200/JCO.2014.55.2208}{10.1200/JCO.2014.55.2208}}
+
+\bibitem[\citeproctext]{ref-Zhao2016-ca}
+\CSLLeftMargin{33. }%
+\CSLRightInline{Zhao L, Claggett B, Tian L, et al. {On the Restricted
+Mean Survival Time Curve in Survival Analysis}. \emph{Biometrics}.
+2016;72(1):215-221.
+doi:\href{https://doi.org/10.1111/biom.12384}{10.1111/biom.12384}}
+
+\bibitem[\citeproctext]{ref-Andersen2013-jm}
+\CSLLeftMargin{34. }%
+\CSLRightInline{Andersen PK. {Decomposition of Number of Life Years Lost
+According to Causes of Death}. \emph{Stat Med}. 2013;32(30):5278-5285.
+doi:\href{https://doi.org/10.1002/sim.5903}{10.1002/sim.5903}}
+
+\bibitem[\citeproctext]{ref-Calkins2018-ed}
 \CSLLeftMargin{35. }%
-\CSLRightInline{Jacobs PD, Kronick R. Getting What We Pay For: How Do
-Risk{-}Based Payments to Medicare Advantage Plans Compare with
-Alternative Measures of Beneficiary Health Risk? \emph{Health Services
-Research}. 2018;53(6):4997-5015.
-doi:\href{https://doi.org/10.1111/1475-6773.12977}{10.1111/1475-6773.12977}}
+\CSLRightInline{Calkins KL, Canan CE, Moore RD, Lesko CR, Lau B. {An
+Application of Restricted Mean Survival Time in a Competing Risks
+Setting: Comparing Time to ART Initiation by Injection Drug Use}.
+\emph{BMC Med Res Methodol}. 2018;18(1):27.
+doi:\href{https://doi.org/10.1186/s12874-018-0484-z}{10.1186/s12874-018-0484-z}}
 
-\bibitem[\citeproctext]{ref-McGuire2025-bp}
+\bibitem[\citeproctext]{ref-Wu2022-mx}
 \CSLLeftMargin{36. }%
-\CSLRightInline{McGuire TG, Enache OM, Chernew M, McWilliams JM, Nham T,
-Rose S. Incidence, persistence, and steady-state prevalence in coding
-intensity for health plan payment. \emph{Health Serv Res}.
-2025;(e70065):e70065.}
-
-\bibitem[\citeproctext]{ref-Abelson2022-du}
-\CSLLeftMargin{37. }%
-\CSLRightInline{Abelson R, Sanger-Katz M. {``The cash monster was
-insatiable''}: How insurers exploited medicare for billions. \emph{The
-New York Times}. Published online October 2022.}
-
-\bibitem[\citeproctext]{ref-DOJ2026-vd}
-\CSLLeftMargin{38. }%
-\CSLRightInline{Justice Office of Public Affairs USD of. Kaiser
-permanente affiliates pay \${556M} to resolve false claims act
-allegations. Published online January 2026.}
-
-\bibitem[\citeproctext]{ref-Abelson2023-gr}
-\CSLLeftMargin{39. }%
-\CSLRightInline{Abelson R, Sanger-Katz M. New medicare rule aims to take
-back \$4.7 billion from insurers. \emph{The New York Times}. Published
-online January 2023.}
-
-\bibitem[\citeproctext]{ref-Centers_for_Medicare_Medicaid_Services2023-dy}
-\CSLLeftMargin{40. }%
-\CSLRightInline{Centers for Medicare \& Medicaid Services. Medicare and
-medicaid programs; policy and technical changes to the medicare
-advantage, medicare prescription drug benefit, program of all-inclusive
-care for the elderly ({PACE}), medicaid fee-for-service, and medicaid
-managed care programs for years 2020 and 2021. \emph{Federal Register}.
-2023;88:6643-6665.}
-
-\bibitem[\citeproctext]{ref-Constantino2025-qf}
-\CSLLeftMargin{41. }%
-\CSLRightInline{Constantino AK. {UnitedHealth} says it is cooperating
-with {DOJ} investigations into medicare billing practices. Published
-online July 2025.}
-
-\bibitem[\citeproctext]{ref-rose2016}
-\CSLLeftMargin{42. }%
-\CSLRightInline{Rose S, Zaslavsky AM, McWilliams JM. Variation In
-Accountable Care Organization Spending And Sensitivity To Risk
-Adjustment: Implications For Benchmarking. \emph{Health Affairs}.
-2016;35(3):440-448.
-doi:\href{https://doi.org/10.1377/hlthaff.2015.1026}{10.1377/hlthaff.2015.1026}}
-
-\bibitem[\citeproctext]{ref-chernew2021}
-\CSLLeftMargin{43. }%
-\CSLRightInline{Chernew ME, Carichner J, Impreso J, et al. Coding-Driven
-Changes In Measured Risk In Accountable Care Organizations. \emph{Health
-Affairs}. 2021;40(12):1909-1917.
-doi:\href{https://doi.org/10.1377/hlthaff.2021.00361}{10.1377/hlthaff.2021.00361}}
-
-\bibitem[\citeproctext]{ref-McWilliams2025-hz}
-\CSLLeftMargin{44. }%
-\CSLRightInline{McWilliams JM, Weinreb G, Landrum MB, Chernew ME. Use of
-patient health survey data for risk adjustment to limit distortionary
-coding incentives in medicare: Article examines use of patient health
-survey data for risk adjustment to limit distortionary coding incentives
-in medicare. \emph{Health Aff (Millwood)}. 2025;44(1):48-57.}
-
-\bibitem[\citeproctext]{ref-westreich2019}
-\CSLLeftMargin{45. }%
-\CSLRightInline{Westreich D. \emph{Epidemiology by Design}. Oxford
-University PressNew York; 2019.
-doi:\href{https://doi.org/10.1093/oso/9780190665760.001.0001}{10.1093/oso/9780190665760.001.0001}}
+\CSLRightInline{Wu H, Yuan H, Yang Z, Hou Y, Chen Z. {Implementation of
+an Alternative method for Assessing Competing Risks: Restricted Mean
+Time Lost}. \emph{Am J Epidemiol}. 2022;191(1):163-172.
+doi:\href{https://doi.org/10.1093/aje/kwab235}{10.1093/aje/kwab235}}
 
 \bibitem[\citeproctext]{ref-Kaplan1958-ye}
-\CSLLeftMargin{46. }%
-\CSLRightInline{Kaplan EL, Meier P. Nonparametric estimation from
-incomplete observations. \emph{J Am Stat Assoc}. 1958;53(282):457-481.}
-
-\bibitem[\citeproctext]{ref-Barberio2024-vs}
-\CSLLeftMargin{47. }%
-\CSLRightInline{Barberio J, Naimi AI, Patzer RE, et al. Influence of
-incomplete death information on cumulative risk estimates in {US} claims
-data. \emph{Am J Epidemiol}. 2024;193(9):1281-1290.}
-
-\bibitem[\citeproctext]{ref-theall2019}
-\CSLLeftMargin{48. }%
-\CSLRightInline{The All of Us Research Program Investigators. The
-{``}All of Us{''} Research Program. \emph{New England Journal of
-Medicine}. 2019;381(7):668-676.
-doi:\href{https://doi.org/10.1056/nejmsr1809937}{10.1056/nejmsr1809937}}
+\CSLLeftMargin{37. }%
+\CSLRightInline{Kaplan EL, Meier P. {Nonparametric Estimation from
+Incomplete Observations}. \emph{J Am Stat Assoc}. 1958;53(282):457-481.
+doi:\href{https://doi.org/10.1080/01621459.1958.10501452}{10.1080/01621459.1958.10501452}}
 
 \bibitem[\citeproctext]{ref-Medicare_Payment_Advisory_Commission2024-cg}
-\CSLLeftMargin{49. }%
-\CSLRightInline{Medicare Payment Advisory Commission. \emph{Report to
-Congress: Medicare Payment Policy}.; 2024.}
+\CSLLeftMargin{38. }%
+\CSLRightInline{Medicare Payment Advisory Commission. {Report to the
+Congress: Medicare Payment Policy}. Published online March 24, 2024.
+Accessed May 1, 2024.
+\url{https://www.medpac.gov/wp-content/uploads/2024/03/Mar24_MedPAC_Report_To_Congress_SEC.pdf}}
+
+\bibitem[\citeproctext]{ref-theall2019}
+\CSLLeftMargin{39. }%
+\CSLRightInline{All of Us Research Program Investigators. {The {``All of
+Us''} Research Program}. \emph{N Engl J Med}. 2019;381(7):668-676.
+doi:\href{https://doi.org/10.1056/NEJMsr1809937}{10.1056/NEJMsr1809937}}
 
 \end{CSLReferences}
 

@@ -1,0 +1,443 @@
+---
+title: "Appendix"
+subtitle: "Time-to-Event Estimation with Unreliably Reported Events in Medicare Health Plan Payment"
+
+bibliography: appendix_bibliography.bib  
+csl: american-medical-association.csl
+
+author:
+  - name: Oana M. Enache
+    email: oenache@stanford.edu
+    affiliations: 
+        - id: 1
+          name: Stanford University School of Medicine
+          department: Department of Biomedical Data Science
+          address: Edwards Building, 300 Pasteur Drive
+          city: Stanford, CA
+          postal-code: 94304
+    attributes:
+        corresponding: true
+  - name: Sherri Rose
+    affiliations: 
+        - id: 2
+          name: Stanford University
+          department: Department of Health Policy
+          address: Encina Commons, 615 Crothers Way
+          city: Stanford, CA
+          postal-code: 94305
+    attributes:
+        corresponding: false
+
+geometry:
+  - inner=1in
+  - outer=1in
+  - top=1in
+  - bottom=1in
+  
+mainfont: "Times New Roman"
+fontsize: 12pt
+whitespace: none
+linestretch: 1
+
+format: 
+ elsevier-pdf:
+  journal: 
+   formatting: doubleblind
+  keep-tex: true
+  fig-pos: H
+  number-sections: true
+  appendix: true
+  cite-method: citeproc
+---
+
+```{r}
+#| include: FALSE
+library(here)
+library(tidyverse)
+library(kableExtra)
+library(ggokabeito) # color blindness friendly color palette
+```
+
+# Considerations for underreporting estimand
+
+The underreporting estimand is used to uniformly shift cumulative incidence in the comparison group ($g=0$, e.g. Traditional Medicare, TM) only. Aligned with prior work[@Ellis2018-mr; @Ghoshal-Datta2024-io], we recommend choosing reference events for underreporting estimation that are expected to persist over time (e.g. paraplegia, human immunodeficiency virus/acquired immunodeficiency syndrome). However, because reference events should be distinct from Hierarchical Condition Categories (HCCs) used for the other forms of estimation we propose the exact set of reference events used by researchers will vary. It is also possible that some chronic HCCs are not coded in sequential monitoring periods for legitimate reasons (e.g. if a beneficiary does not receive care for the condition in both periods).
+
+In addition, we note that prior work has found that underreporting is consistently present in TM, but the degree varies by HCC and by year [@Ellis2018-mr; @Ghoshal-Datta2024-io]. This also means that underreporting estimates will likely vary depending on researchers' choice of reference events. However, current coding intensity estimation approaches overwhelmingly disregard underreporting overall, so our proposed estimator is a helpful first step towards better accounting for this issue and avoiding overestimation of coding intensity between Medicare programs. Future work in undercoding estimation could better account for heterogeneity in coding behaviors.
+
+# Variance and covariance of estimators
+
+Variance and (if applicable) covariance are reported by estimator below.
+
+## $\hat{F}_s(t)$
+
+$\hat{F}_s(t)$ is the estimator for event-specific cumulative incidence. The variance for $\hat{F}_s(t)$ is $\widehat{\text{var}}(\hat{F}_s(t)) = \sum_{t_l \le t} \widehat{\text{var}}(\hat{\theta}(t_l)) + 2 \sum_{t_l < t} \sum_{t_l < t_i \le t} \widehat{\text{cov}}(\hat{\theta}(t_l), \hat{\theta}(t_i))$, and covariance is $\widehat{\text{cov}}(\hat{F}_s(t), \hat{F}_s(u)) = \widehat{\text{var}}(\hat{F}_s(t)) + \sum_{t_l \le t} \sum_{t < t_i \le u} \widehat{\text{cov}}(\hat{\theta}(t_l), \hat{\theta}(t_i))$. Here $t_l$ indicates an event reporting time prior to $t_i$ and $u$ is an arbitrary time distinct from $t$. $\hat{\theta}(t_i)$ has variance $\widehat{\text{var}}(\widehat{\theta}(t_i))= (\widehat{\theta}(t_i))^2 \times ((r_i - d_{si})/(d_{si}r_i) + \sum_{t_l < t_i} (d_l/(r_l(r_l - d_l))))$ and covariance $\widehat{\text{cov}}(\hat{\theta} (t_i), \hat{\theta} (t_l)) = \hat{\theta} (t_i) \hat{\theta} (t_l)(-(1/r_i) + \sum_{t_l < t_i} (d_l/(r_l(r_l - d_l))))$ [@Conner2021-ac], where $d_l = \sum d_{s,l}$ is the reported count of events of any subtype at $t_l$, $d_{s,l}$ is analogous to $d_{s,i}$, and $r_l$ is the count of beneficiaries at risk at $t_l$.
+
+## $\hat{\mu}_s(\tau)$
+
+$\hat{\mu}_s(\tau)$ is the estimator for $\psi = \mu_{s,g=1}(\tau) - \mu_{s,g=0}(\tau)$, or the restricted mean time lost for event $s$ up in a single monitoring period with end time $\tau$. This estimator has variance $\widehat{\text{var}}(\hat{\mu}_s(\tau)) = \sum_{t_i < \tau} (t_{i + 1} - t_i)^2 \widehat{\text{var}}(\hat{F}_s(t_i)) + 2 \sum_{t_i < \tau} \sum_{t_l < t_i} (t_{i+1} - t_i)(t_{l+1} - t_l) \widehat{\text{cov}}(\hat{F}_s(t_i), \hat{F}_s(t_l))$.
+
+## $\widehat{\psi}$ and $\widehat{\psi}^*$
+
+$\hat{\psi}$ is the estimand for $\psi = \mu_{s,g=1}(\tau) - \mu_{s,g=0}(\tau)$, or the difference in mean time without event across groups within one monitoring period. $\hat{\psi}^*$ is the estimate of the same estimand with underreporting correction. The variance of $\widehat{\psi}$ is $\widehat{\text{var}}(\widehat{\psi}) = \widehat{\text{var}}(\hat{\mu}_{s,g=1}(\tau)) + \widehat{\text{var}}(\hat{\mu}_{s,g=0}(\tau))$, as groups are assumed to be independent. It does not change for $\widehat{\psi}^*$.
+
+## $\widehat{\psi}_M$ and $\widehat{\psi}_M^*$
+
+$\widehat{\psi}_M$ estimates $\psi$ across sequential montioring periods $\psi_{M} = \psi_m - \psi_{m-1}$, and $\widehat{\psi}_M^*$ does the same with an underreporting correction in the comparison group. The variance of $\widehat{\psi}_M$ is $\widehat{\text{var}}(\widehat{\psi}_M) = \widehat{\text{var}}(\widehat{\psi}_m) + \widehat{\text{var}}(\widehat{\psi}_{m-1})$. Although the components of this estimator come from the same fixed population, the correlation between component estimates is assumed to be negligible because we are comparing differences in restricted mean time lost across independent groups estimated in disjoint time intervals. Therefore, covariance is zero. The variance remains unchanged for $\widehat{\psi}_M^*$.
+
+## $\widehat{\omega}$
+
+$\widehat{\omega}$ estimates possible severity-based upcoding in one monitoring period. The variance of $\widehat{\omega}$ is $\widehat{\text{var}}(\widehat{\omega}) = \widehat{\text{var}}(\widehat{\omega}_{g=1}) + \widehat{\text{var}}(\widehat{\omega}_{g=0})$, where $\widehat{\text{var}}(\widehat{\omega_g}) = \widehat{\text{var}}(\hat{\mu}_{s=k}(\tau)) + \widehat{\text{var}}(\hat{\mu}_{s=1}(\tau)) - 2\widehat{\text{cov}}(\hat{\mu}_{s=k}(\tau), \hat{\mu}_{s=1}(\tau))$ and $\widehat{\text{cov}}(\hat{\mu}_{s=k}(\tau), \hat{\mu}_{s=1}(\tau)) = \sum_{i} \sum_j \widehat{\text{cov}}(\hat{F}_k(t_{i-1}), \hat{F}_1(t_{j-1}))$ for distinct event times $t_i$ and $t_j$. Here, $t_i$ corresponds to event reporting increments in the cumulative incidence function for severity level $k$, while $t_j$ corresponds to the equivalent for severity level $1$. Although event reporting times are the same, we write these using separate variables because covariance is estimated between all pairs of increments for these two severity levels.
+
+{{< pagebreak >}}
+
+# Summary statistics from All of Us survey data {#sec-allofus .appendix}
+
+```{r}
+#| echo: false
+#| message: false
+#| label: tbl-aousurveys
+#| tbl-cap: "**Included surveys from All of Us**. These data represent included survey respondents with at least one self-reported health condition that mapped to a Hierarchical Condition Category (HCC) in Version 28 of the Medicare Advantage risk adjustment algorithm. Only sets of co-occurring HCCs with more than 21 respondents (which also excludes several sets with more than 20 respondents) were used in any summary tables to comply with the All of Us Data and Statistics Dissemination Policy."
+
+surveys_included <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_count_by_survey_df.csv"),
+  show_col_types = FALSE
+) |>
+  rename(
+    "All of Us Survey Title" = "survey",
+    "Number of Unique Respondents" = num_respondents
+  )
+
+surveys_included |>
+  kable(align = "l")
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Number of respondents by HCC with available survey questions**. These data represent included survey respondents with at least one self-reported health condition that mapped to a Hierarchical Condition Category (HCC) in Version 28 of the Medicare Advantage risk adjustment algorithm. Only sets of co-occurring HCCs with more than 21 respondents (which also excludes several sets with more than 20 respondents) were used in any summary tables to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-num-repondents
+
+
+people_per_hcc <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_count_by_hcc_df.csv"),
+  show_col_types = FALSE
+) |>
+  rowwise() |>
+  mutate(
+    hcc = toupper(hcc),
+    hcc_int = as.integer(strsplit(hcc, "HCC")[[1]][2])
+  ) |>
+  ungroup() |>
+  arrange(hcc_int) |>
+  select(-hcc_int) |>
+  rename(
+    "Version 28 HCC" = "hcc",
+    "Number of Respondents" = "num_respondents"
+  )
+
+people_per_hcc |>
+  kable(align = "l")
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Distribution of HCC-relevant conditions per person**. These data represent included survey respondents with at least one self-reported health condition that mapped to a Hierarchical Condition Category (HCC) in Version 28 of the Medicare Advantage risk adjustment algorithm. Only sets of co-occurring HCCs with more than 21 respondents (which also excludes several sets with more than 20 respondents) were used in any summary tables to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-hccspp
+
+hcc_count_per_person <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/hccs_by_participant_count_df.csv"),
+  show_col_types = FALSE
+) |>
+  rename(
+    "Number of HCC-Relevant Conditions Per Person" = "hccs_present",
+    "Number of Respondents" = "num_respondents"
+  )
+
+hcc_count_per_person |>
+  kable()
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondent age at survey response**. The following tables show respondent information using categories provided by All of Us. Not all respondents responded to all questions so counts may vary. The rows in each table correspond to available fields in All of Us. These characteristics are not displayed jointly because that would result in sample sizes too small to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-age
+
+respondent_age <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_age_at_survey_response_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(respondent_count),
+    pct = round(respondent_count / total, 2) * 100
+  ) |>
+  select(-total) |>
+  rename(
+    "Age Group (years)" = "age_groups",
+    "Number of Respondents" = "respondent_count",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_age |>
+  kable()
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported sex at birth**. The following tables show respondent information using categories provided by All of Us. Not all respondents responded to all questions so counts may vary. The rows in each table correspond to available fields in All of Us. These characteristics are not displayed jointly because that would result in sample sizes too small to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-sex
+
+respondent_sex <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_sex_at_birth_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100
+  ) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Sex at Birth" = "sex_at_birth",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_sex |>
+  kable()
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported ethnicity**. The following tables show respondent information using categories provided by All of Us. Not all respondents responded to all questions so counts may vary. The rows in each table correspond to available fields in All of Us. These characteristics are not displayed jointly because that would result in sample sizes too small to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-ethnicity
+
+respondent_ethnicity <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_ethnicity_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100,
+    ethnicity = recode(ethnicity,
+      "PMI: Prefer Not To Answer" = "Prefer not to answer",
+      "PMI: Skip" = "Skipped",
+      "What Race Ethnicity: Race Ethnicity None Of These" = "Neither"
+    )
+  ) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Ethnicity" = "ethnicity",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_ethnicity |>
+  kable()
+```
+
+{{< pagebreak >}}
+
+```{r}
+#| echo: false
+#| message: false
+#| tbl-cap: "**Respondents' self-reported race**. The following tables show respondent information using categories provided by All of Us. Not all respondents responded to all questions so counts may vary. The rows in each table correspond to available fields in All of Us. These characteristics are not displayed jointly because that would result in sample sizes too small to comply with the All of Us Data and Statistics Dissemination Policy."
+#| label: tbl-race
+
+race_ordering_for_table <- c("Asian", "Black or African American", "White", "Another single population", "More than one population", "I prefer not to answer", "Skipped", "None indicated", "None of these")
+
+respondent_race <- read_csv(here("R/figures_and_tables/all_of_us_summary_statistics/participant_race_df.csv"),
+  show_col_types = FALSE
+) |>
+  mutate(
+    race = factor(
+      recode(race,
+        "None Indicated" = "None indicated",
+        "PMI: Skip" = "Skipped"
+      ),
+      levels = c("Asian", "Black or African American", "White", "Another single population", "More than one population", "I prefer not to answer", "Skipped", "None indicated", "None of these")
+    ),
+    total = sum(num_respondents),
+    pct = round(num_respondents / total, 2) * 100
+  ) |>
+  arrange(factor(race), levels = race_ordering_for_table) |>
+  select(-total) |>
+  rename(
+    "Self-Reported Race" = "race",
+    "Number of Respondents" = "num_respondents",
+    "Percent of Respondents (%)" = pct
+  )
+
+respondent_race |>
+  kable()
+```
+
+{{< pagebreak >}}
+
+# Additional information about `upcoding` R package
+
+This package is available under a MIT license, a copy of which is included in the package repository. A brief tutorial on specific package functions is available in the package’s Github repository.
+
+## Baseline data simulation {#sec-baseline-data-simulation}
+
+We simulated co-occurring hierarchical condition categories (HCCs) using data from the All of Us study [@theall2019]. This study was designed to enroll a million participants across the United States, focusing especially on groups historically underrepresented in clinical and biomedical research [@theall2019] and included questions that overlapped with many HCCs in the current version of the Centers for Medicare and Medicaid Services' (CMS) Medicare Advantage (MA) risk adjustment algorithm (i.e. CMS-HCC Version 28, or V28). V28 HCCs (listed in Appendix @tbl-v28hccs) were manually mapped to Systemized Nomenclature of Medicine-Clinical Terms (SNOMED-CT) concept identifiers for survey questions (using version 7 of All of Us data; see this project's Github repository for mapping). Then, survey responses to all available SNOMED-CT concepts were queried from the All of Us database. Included surveys, available respondent sociodemographic characteristics, and coverage of V28 HCCs are described in @sec-add-info.
+
+For each surveyed person, self-reported co-occurring V28 HCCs were extracted. This was then summarized into a table of unique co-occurring HCC sets and a count of the number of All of Us survey respondents that reported having these diagnoses. In line with the All of Us Data and Statistics Dissemination Policy, only sets of co-occurring HCCs with more than 21 respondents were exported from All of Us's platform (the Researcher Workbench) to be used in analyses. This both omits all sets of 20 or fewer respondents and also excludes several sets of co-occurring HCCs with more than 20 respondents. Users also have the option to use alternate sets of co-occurring V28 HCCs for baseline data sampling if they prefer.
+
+## Upcoding and loss to follow up simulation
+
+The package enables users to simulate two types of upcoding realistic to MA: any-available or severity-based, although the latter can only occur if an HCC has competing events. This upcoding is randomly split across a user-specified number of time points. Even though there is inherent right censoring in upcoded data (because only a proportion of all simulated individuals will be upcoded or coded at all), the package provides users with the option to include additional right censoring. This is meant to be representative of loss to follow up or death, both of which are known issues in following a population aged 65 years and older over time [@Barberio2024-vs]. Users specify the proportion of loss to follow up they want to include, and a randomly selected set of rows (e.g., individuals) are right censored over each time point. Once someone is lost to follow up, they cannot be coded for any HCC in subsequent time periods.
+
+## Undercoding simulation {#sec-undercoding-simulation}
+
+The package also separately enables undercoding. Here, users specify a proportion of all coded diagnoses (from simulated baseline data) to randomly remove across the entire data set. This occurs on a dataset-wide level because undercoding is a systemic issue in Traditional Medicare [@Ellis2018-mr; @Ghoshal-Datta2024-io] and so we do not assume that it impacts specific V28 HCCs disproportionately.
+
+{{< pagebreak >}}
+
+# Additional information about version 28 Hierarachical Condition Categories (HCCs) {#sec-add-info .appendix}
+
+| HCC | HCC Description | Competing Events |
+|------------------------|------------------------|------------------------|
+| HCC1 | HIV/AIDS | N/A |
+| HCC2 | Septicemia, sepsis, systemic inflammatory response syndrome/shock | N/A |
+| HCC6 | Opportunistic infections | N/A |
+| HCC17 | Cancer metastatic to lung, liver, brain, and other organs; acute myeloid leukemia except promyelocytic | HCC18, HCC19, HCC20, HCC21, HCC22, HCC23 |
+| HCC18 | Cancer metastatic to bone, other and unspecified metastatic cancer; acute leukemia except myeloid | HCC19, HCC20, HCC21, HCC22, HCC23 |
+| HCC19 | Myelodysplastic syndromes, multiple myeloma, and other cancers | HCC20, HCC21, HCC22, HCC23 |
+| HCC20 | Lung and other severe cancers | HCC21, HCC22, HCC23 |
+| HCC21 | Lymphoma and other cancers | HCC22, HCC23 |
+| HCC22 | Bladder, colorectal, and other cancers | HCC23 |
+| HCC23 | Prostate, breast, and other cancers and tumors | N/A |
+| HCC35 | Pancreas transplant status | HCC36, HCC37, HCC38 |
+| HCC36 | Diabetes with severe acute complications | HCC37, HCC38 |
+| HCC37 | Diabetes with chronic complications | HCC38 |
+| HCC38 | Diabetes with glycemic, unspecified, or no complications | N/A |
+| HCC48 | Morbid obesity | N/A |
+| HCC49 | Specified lysosomal storage disorders | N/A |
+| HCC50 | Amyloidosis, porphyria, and other specified metabolic disorders | N/A |
+| HCC51 | Addison's and Cushing's diseases, acromegaly, and other specified endocrine disorders | N/A |
+| HCC62 | Liver transplant status/complications | HCC63, HCC64, HCC65, HCC68 |
+| HCC63 | Chronic liver failure/end-stage liver disorders | HCC64, HCC65, HCC68, HCC202 |
+| HCC64 | Cirrhosis of liver | HCC65, HCC68 |
+| HCC65 | Chronic hepatitis | N/A |
+| HCC68 | Cholangitis and obstruction of bile duct without gallstones | N/A |
+| HCC77 | Intestine transplant status/complications | HCC78, HCC80, HCC81 |
+| HCC78 | Intestinal obstruction/perforation | N/A |
+| HCC79 | Chronic pancreatitis | N/A |
+| HCC80 | Crohn's disease (regional enteritis) | HCC81 |
+| HCC81 | Ulcerative colitis | N/A |
+| HCC92 | Bone/joint/muscle/severe soft tissue infections/necrosis | N/A |
+| HCC93 | Rheumatoid arthritis and other specified inflammatory rheumatic disorders | HCC94 |
+| HCC94 | Systemic lupus erythematosus and other specified systemic connective tissue disorders | N/A |
+| HCC107 | Sickle cell anemia (Hb-SS) and thalassemia beta zero | HCC108 |
+| HCC108 | Sickle cell disorders, except sickle cell anemia (Hb-SS) and thalassemia beta zero; beta thalassemia major | N/A |
+| HCC109 | Acquired hemolytic, aplastic, and sideroblastic anemias | N/A |
+| HCC111 | Hemophilia, male | HCC112 |
+| HCC112 | Immune thrombocytopenia and specified coagulation defects and hemorrhagic conditions | N/A |
+| HCC114 | Common variable and combined immunodeficiencies | HCC115 |
+| HCC115 | Specified immunodeficiencies and white blood cell disorders | N/A |
+| HCC125 | Dementia, severe | HCC126, HCC127 |
+| HCC126 | Dementia, moderate | HCC127 |
+| HCC127 | Dementia, mild or unspecified | N/A |
+| HCC135 | Drug use with psychotic complications | HCC136, HCC137, HCC138, HCC139 |
+| HCC136 | Alcohol use with psychotic complications | HCC137, HCC138, HCC139 |
+| HCC137 | Drug use disorder, moderate/severe, or drug use with non-psychotic complications | HCC138, HCC139 |
+| HCC138 | Drug use disorder, mild, uncomplicated, except cannabis | HCC139 |
+| HCC139 | Alcohol use disorder, moderate/severe, or alcohol use with specified non-psychotic complications | N/A |
+| HCC151 | Schizophrenia | HCC152, HCC153, HCC154, HCC155 |
+| HCC152 | Psychosis, except schizophrenia | HCC153, HCC154, HCC155 |
+| HCC153 | Personality disorders; anorexia/bulimia nervosa | HCC154, HCC155 |
+| HCC154 | Bipolar disorders without psychosis | HCC155 |
+| HCC155 | Major depression, moderate or severe, without psychosis | N/A |
+| HCC180 | Quadriplegia | HCC181, HCC182, HCC253, HCC254 |
+| HCC181 | Paraplegia | HCC182, HCC254 |
+| HCC182 | Spinal cord disorders/injuries | N/A |
+| HCC190 | Amyotrophic lateral sclerosis and other motor neuron disease, spinal muscular atrophy | N/A |
+| HCC191 | Quadriplegic cerebral palsy | HCC180, HCC181, HCC182, HCC192, HCC253, HCC254 |
+| HCC192 | Cerebral palsy, except quadriplegic | HCC180, HCC181, HCC182, HCC253, HCC254 |
+| HCC193 | Chronic inflammatory demyelinating polyneuritis and multifocal motor neuropathy | N/A |
+| HCC195 | Myasthenia gravis with (acute) exacerbation | HCC196 |
+| HCC196 | Myasthenia gravis without (acute) exacerbation and other myoneural disorders | N/A |
+| HCC197 | Muscular dystrophy | N/A |
+| HCC198 | Multiple sclerosis | N/A |
+| HCC199 | Parkinson and other degenerative disease of basal ganglia | N/A |
+| HCC200 | Friedreich and other hereditary ataxias; Huntington disease | N/A |
+| HCC201 | Seizure disorders and convulsions | N/A |
+| HCC202 | Coma, brain compression/anoxic damage | N/A |
+| HCC211 | Respirator dependence/tracheostomy status/complications | HCC212, HCC213 |
+| HCC212 | Respiratory arrest | HCC213 |
+| HCC213 | Cardio-respiratory failure and shock | N/A |
+| HCC221 | Heart transplant status/complications | HCC222, HCC223, HCC224, HCC225, HCC226, HCC227 |
+| HCC222 | End stage heart failure | HCC223, HCC224, HCC225, HCC226, HCC227 |
+| HCC223 | Heart failure with heart assist device/artificial heart | HCC224, HCC225, HCC226, HCC227 |
+| HCC224 | Acute on chronic heart failure | HCC225, HCC226, HCC227 |
+| HCC225 | Acute heart failure (excludes acute on chronic) | HCC226, HCC227 |
+| HCC226 | Heart failure, except end stage and acute | HCC227 |
+| HCC227 | Cardiomyopathy/myocarditis | N/A |
+| HCC228 | Acute myocardial infarction | HCC229 |
+| HCC229 | Unstable angina and other acute ischemic heart disease | N/A |
+| HCC238 | Specified heart arrhythmias | N/A |
+| HCC248 | Intracranial hemorrhage | HCC249 |
+| HCC249 | Ischemic or unspecified stroke | N/A |
+| HCC253 | Hemiplegia/hemiparesis | HCC254 |
+| HCC254 | Monoplegia, other paralytic syndromes | N/A |
+| HCC263 | Atherosclerosis of arteries of the extremities with ulceration or gangrene | HCC264, HCC383, HCC409 |
+| HCC264 | Vascular disease with complications | N/A |
+| HCC267 | Deep vein thrombosis and pulmonary embolism | N/A |
+| HCC276 | Lung transplant status/complications | HCC277, HCC278, HCC279, HCC280 |
+| HCC277 | Cystic fibrosis | HCC278, HCC279, HCC280 |
+| HCC278 | Idiopathic pulmonary fibrosis and lung involvement in systemic sclerosis | HCC279, HCC280 |
+| HCC279 | Severe persistent asthma | HCC280 |
+| HCC280 | Chronic obstructive pulmonary disease, interstitial lung disorders, and other chronic lung disorders | N/A |
+| HCC282 | Aspiration and specified bacterial pneumonias | HCC283 |
+| HCC283 | Empyema, lung abscess | N/A |
+| HCC298 | Severe diabetic eye disease, retinal vein occlusion, and vitreous hemorrhage | N/A |
+| HCC300 | Exudative macular degeneration | N/A |
+| HCC326 | Chronic kidney disease, stage 5 | HCC327, HCC328, HCC329 |
+| HCC327 | Chronic kidney disease, severe (stage 4) | HCC328, HCC329 |
+| HCC328 | Chronic kidney disease, moderate (stage 3B) | HCC329 |
+| HCC329 | Chronic kidney disease, moderate (stage 3, except 3B) | N/A |
+| HCC379 | Pressure ulcer of skin with necrosis through to muscle, tendon, or bone | HCC380, HCC381, HCC382, HCC383 |
+| HCC380 | Chronic ulcer of skin, except pressure, through to bone or muscle | HCC381, HCC382, HCC383 |
+| HCC381 | Pressure ulcer of skin with full thickness skin loss | HCC382, HCC383 |
+| HCC382 | Pressure ulcer of skin with partial thickness skin loss | HCC383 |
+| HCC383 | Chronic ulcer of skin, except pressure, not specified as through to bone or muscle | N/A |
+| HCC385 | Severe skin burn | N/A |
+| HCC387 | Pemphigus, pemphigoid, and other specified autoimmune skin disorders | N/A |
+| HCC397 | Major head injury with loss of consciousness (\> 1 hour) | HCC202, HCC398, HCC399 |
+| HCC398 | Major head injury with loss of consciousness (\< 1 hour or unspecified) | HCC202, HCC399 |
+| HCC399 | Major head injury without loss of consciousness | N/A |
+| HCC401 | Vertebral fractures without spinal cord injury | N/A |
+| HCC402 | Hip fracture/dislocation | N/A |
+| HCC405 | Traumatic amputations and complications | HCC409 |
+| HCC409 | Amputation status, lower limb/amputation complications | N/A |
+| HCC454 | Stem cell, including bone marrow, transplant status/complications | N/A |
+| HCC463 | Artificial openings for feeding or elimination | N/A |
+
+: **Hierarchical Condition Categories (HCCs) included in the Medicare Advantage risk adjustment algorithm version 28 (V28).** Each of the HCCs in this table are described as written in the Centers for Medicare and Medicaid Services' (CMS) 2024 Medicare Advantage Advance Notice [@Centers_for_Medicare_and_Medicaid_Services2023-zf]. Competing events, if applicable, are also noted from the 2024 CMS Risk Adjustment Model Software and ICD-10 Mappings, specifically the Midyear/Final Model Software, which is in the SAS language [@Centers-for-Medicare-and-Medicaid-ServicesUnknown-pf]. If a set of competing events is not N/A, then, if the HCC in that row is coded, none of the competing event HCCs can also be coded for billing purposes. The hierarchy described in the "Competing Events" column can also be found in the `upcoding` R package. {#tbl-v28hccs}
+
+{{< pagebreak >}}
+
+# Additional simulation results {#sec-addl-sim .appendix}
+
+![**Cumulative incidence functions for the Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 25% any-available MA upcoding.** Specified heart arrhythmias corresponds to HCC238, which does not have any competing events. For this HCC, 25% of any-available individuals in the MA group are upcoded and 5% of any-available individuals in the TM comparison group are upcoded. The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure1.png){#fig-supp-2-1}
+
+![**Cumulative incidence functions for the Specified Heart Arrhythmias Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 30% any-available MA upcoding.** Specified heart arrhythmias corresponds to HCC238, which does not have any competing events. For this HCC, 30% of any-available individuals in the MA group are upcoded and 5% of any-available individuals in the TM comparison group are upcoded. The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure2.png){#fig-supp-2-2}
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 20% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 20% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly. The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure3.png){#fig-supp-2-3}
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 25% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 25% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly. The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure4.png){#fig-supp-2-4}
+
+![**Cumulative incidence functions for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups: 30% lower severity MA upcoding.** 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). 30% of any individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded and 5% of individuals in the TM comparison group are upcoded similarly.The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure5.png){#fig-supp-2-5}
+
+![**Within-monitoring period** $\boldsymbol{\psi}$ **estimates for the 'Dementia, Severe' Hierarchical Condition Category (HCC) in simulated Medicare Advantage (MA) and Traditional Medicare (TM) groups.** $\widehat{\psi}$ corresponds to the proposed estimator for $\psi$, or the difference in mean time without event (i.e. incident coding of the HCC) across groups. 'Dementia, Severe' corresponds to HCC125, which has lower severity HCCs 'Dementia, Moderate' (HCC126) and 'Dementia, Mild or Unspecified' (HCC127). For this HCC, individuals in the MA group who were previously coded with either HCC126 or HCC127 are upcoded to varying degrees and individuals in the TM comparison group are upcoded 5% similarly. The first monitoring period is labeled M1, and the second monitoring period is labeled M2. Given the large sample size, confidence intervals are very narrow and are therefore omitted as they cannot be distinguished visually.](images/enache_supp_section2_figure6.png){#fig-supp-2-6}
+
+{{< pagebreak >}}
+
+**References**
