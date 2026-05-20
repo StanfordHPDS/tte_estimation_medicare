@@ -7,7 +7,8 @@
 
 This repository contains manuscript-relevant code for the paper titled
 “Time-to-Event Estimation with Unreliably Reported Events in Medicare
-Health Plan Payment” by Oana M. Enache and Sherri Rose.
+Health Plan Payment” by Oana M. Enache and Sherri Rose,
+[arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
 
 More specifically, this code:
 
@@ -19,9 +20,6 @@ More specifically, this code:
   simulations for manuscript
 
 - (In Section **Manuscript**) Generates plots and manuscript.
-
-- (In Section **Poster Presentations**) Generates several posters from
-  varying iterations of the project.
 
 Each of these have their own environment, which is specified in the
 corresponding section. In general, you can restore a project library
@@ -49,9 +47,6 @@ using/re-running parts of the code is also possible.
     Researcher Workbench and code to generate all figures in manuscript
 
 - `manuscript/`: Code to generate manuscript and copies in PDF
-
-- `presentations/`: Code to generate posters from various presentations
-  of this project
 
 - `renv/`: Additional local renv files to use for analyses besides on
   All of Us or Sherlock
@@ -189,25 +184,7 @@ The manuscript is generated from the file:
 ### Output
 
 A PDF of the manuscript can be found at
-`manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are
-in `R/figures_and_tables/`.
-
-## Poster Presentations
-
-### Setup
-
-Restore the renv `renv.lock` . This should occur automatically when you
-open the project.
-
-Note. Several of the presentations in this repo (specifically the
-posters) rely on the
-[posterdown](https://github.com/brentthorne/posterdown) package. As
-posterdown is no longer on CRAN, if you want this separately from within
-the renv we recommend installing posterdown from Github by using
-`remotes::install_github("brentthorne/posterdown")`.
-
-### Code & Output
-
-All posters are in the presentation folder. Within each folder, the file
-with the `.Rmd` suffix generates the poster, which is an HTML. You can
-save the HTML as a PDF via Control + P \> Save as PDF from your browser.
+`manuscript/main_manuscript_with_figures.pdf`, and a PDF of the appendix
+can be found at `manuscript/appendix/appendix.pdf.` Figures for the main
+manuscript can be found in `manuscript/images`, and figures for the
+appendix can be found in `manuscript/appendix/images/`.
