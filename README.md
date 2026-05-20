@@ -7,8 +7,7 @@
 
 This repository contains manuscript-relevant code for the paper titled
 “Time-to-Event Estimation with Unreliably Reported Events in Medicare
-Health Plan Payment” by Oana M. Enache and Sherri Rose,
-[arxiv:2602.04092](https://arxiv.org/abs/2602.04092).
+Health Plan Payment” by Oana M. Enache and Sherri Rose.
 
 More specifically, this code:
 
@@ -20,6 +19,9 @@ More specifically, this code:
   simulations for manuscript
 
 - (In Section **Manuscript**) Generates plots and manuscript.
+
+- (In Section **Poster Presentations**) Generates several posters from
+  varying iterations of the project.
 
 Each of these have their own environment, which is specified in the
 corresponding section. In general, you can restore a project library
@@ -47,6 +49,9 @@ using/re-running parts of the code is also possible.
     Researcher Workbench and code to generate all figures in manuscript
 
 - `manuscript/`: Code to generate manuscript and copies in PDF
+
+- `presentations/`: Code to generate posters from various presentations
+  of this project
 
 - `renv/`: Additional local renv files to use for analyses besides on
   All of Us or Sherlock
@@ -105,38 +110,11 @@ further details.
 
 ### Setup
 
-As of December 2025, it does not work to use the local renv on Sherlock.
-So, you can get setup to run the slurm script as follows. This setup
-only needs to happen once.
+This setup only needs to happen once.
 
-On Sherlock, run the following commands in this order:
+#### 1. SSH for cloning the repo
 
-    ```         
-    # Launch interactive dev session with 4 CPUs
-
-    $ sh_dev -c 4
-
-    # Load the required modules
-
-    $ ml purge binutils libgit2
-    $ ml R/4.4.2
-    $ ml fribidi/1.0.12 libwebp/1.3.0 freetype/2.9.1 
-
-    # Launch R and install tidyverse
-
-    $ R
-    > install.packages("tidyverse", repos = "http://cran.us.r-project.org", Ncpus=4)
-    > install.packages("here")
-    > install.packages("furrr")
-    > install.packages("remotes")
-    > install.packages("gert", configure.vars = list(USE_SYSTEM_LIBGIT2 = 1))
-    > install.packages("devtools")
-    > library(devtools)
-    > devtools::install_github("oena/khsmisc") # installs Oana's fork of khmisc package
-    > devtools::install_github("StanfordHPDS/upcoding") # install upcoding package
-    ```
-
-Separately, you need to [create a new SSH key for
+You need to [create a new SSH key for
 Sherlock](https://docs.github.com/en/enterprise-cloud@latest/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=linux)
 (you only need to do the section “Generating a new SSH key”) and [add it
 to your Github
@@ -145,6 +123,23 @@ if you haven’t already. You also need to authorize this SSH key for use
 with Stanford’s single-sign on using the instructions
 [here](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/authorizing-an-ssh-key-for-use-with-single-sign-on).
 Once this is set you should be able to clone this repo to your account.
+
+#### 2. Build the simulation container
+
+The repo includes an Apptainer definition file (`apptainer.def`) and a
+`Makefile` that builds an R 4.5.3 image with all packages from
+`renv.lock`, including the vendored `upcoding`, `khsmisc`, and
+`posterdown` packages in `renv/cellar/`. From the cloned repo root on
+Sherlock, run:
+
+``` bash
+make container
+```
+
+The image is written to `$GROUP_HOME/containers/upcoding-sim_4.5.3.sif`,
+which is where `run_simulations.sh` expects to find it. Re-run
+`make container` whenever `renv.lock` or the contents of `renv/cellar/`
+change.
 
 ### Code
 
@@ -179,7 +174,7 @@ open the project.
 
 ### Code
 
-Generate all figures:
+Generate all figures (besides those from All of Us):
 
 `Rscript generate_simulation_figures.R` . This will generate figures
 from the zipped
@@ -195,7 +190,24 @@ The manuscript is generated from the file:
 
 A PDF of the manuscript can be found at
 `manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are
-in `manuscript/images/`. The supporting information PDF and
-corresponding images are available in
-`manuscript/supporting_information/supporting_information.pdf` and
-`manuscript/supporting_information/images/` respectively.
+in `R/figures_and_tables/`.
+
+## Poster Presentations
+
+### Setup
+
+Restore the renv `renv.lock` . This should occur automatically when you
+open the project.
+
+Note. Several of the presentations in this repo (specifically the
+posters) rely on the
+[posterdown](https://github.com/brentthorne/posterdown) package. As
+posterdown is no longer on CRAN, if you want this separately from within
+the renv we recommend installing posterdown from Github by using
+`remotes::install_github("brentthorne/posterdown")`.
+
+### Code & Output
+
+All posters are in the presentation folder. Within each folder, the file
+with the `.Rmd` suffix generates the poster, which is an HTML. You can
+save the HTML as a PDF via Control + P \> Save as PDF from your browser.
