@@ -1,0 +1,25 @@
+Bootstrap: docker
+From: rocker/r-ver:4.5.3
+
+%files
+    renv.lock           /opt/build/renv.lock
+    .Rprofile           /opt/build/.Rprofile
+    renv/activate.R     /opt/build/renv/activate.R
+    renv/settings.json  /opt/build/renv/settings.json
+    renv/cellar         /opt/build/renv/cellar
+
+%environment
+    export RENV_PATHS_LIBRARY=/opt/R-renv-library
+    export R_LIBS_SITE=/opt/R-renv-library/linux-ubuntu-noble/R-4.5/x86_64-pc-linux-gnu
+    export RENV_CONFIG_AUTOLOADER_ENABLED=FALSE
+
+%post
+    apt-get update && apt-get install -y --no-install-recommends \
+        libglpk40 \
+        libwebpmux3
+    rm -rf /var/lib/apt/lists/*
+
+    export RENV_PATHS_LIBRARY=/opt/R-renv-library
+    mkdir -p /opt/R-renv-library
+    cd /opt/build
+    R -e 'renv::restore()'

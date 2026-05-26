@@ -46,13 +46,13 @@ generate_cif_figures <- function() {
       # Define file name according to HCC and upcoding percentage
       if (h == "hcc238") {
         curr_png_file_name <- case_when(
-          p == 20 ~ "enache_figure1.png",
+          p == 20 ~ "enache_figure2.png",
           p == 25 ~ "enache_supp_section2_figure1.png",
           p == 30 ~ "enache_supp_section2_figure2.png"
         )
         out_path <- case_when(
           p == 20 ~ "manuscript/images",
-          p != 20 ~ "manuscript/supporting_information/images"
+          p != 20 ~ "manuscript/appendix/images"
         )
       } else if (h == "hcc125") {
         curr_png_file_name <- case_when(
@@ -60,7 +60,7 @@ generate_cif_figures <- function() {
           p == 25 ~ "enache_supp_section2_figure4.png",
           p == 30 ~ "enache_supp_section2_figure5.png"
         )
-        out_path <- "manuscript/supporting_information/images"
+        out_path <- "manuscript/appendix/images"
       }
       curr_tiff_file_name <- gsub(".png", ".tiff", curr_png_file_name)
 

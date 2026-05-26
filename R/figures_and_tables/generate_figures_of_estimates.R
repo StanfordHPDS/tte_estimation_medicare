@@ -37,12 +37,12 @@ generate_figures_of_estimates <- function() {
   for (h in unique(within_rmtl_df$hcc)) {
     # Define filename and y axis maximum value depending on the HCC
     if (h == "hcc238") {
-      curr_png_file_name <- "enache_figure2.png"
+      curr_png_file_name <- "enache_figure3.png"
       out_path <- "manuscript/images"
       y_axis_max <- 0.4
     } else if (h == "hcc125") {
       curr_png_file_name <- "enache_supp_section2_figure6.png"
-      out_path <- "manuscript/supporting_information/images"
+      out_path <- "manuscript/appendix/images"
       y_axis_max <- 0.15
     }
     curr_tiff_file_name <- gsub(".png", ".tiff", curr_png_file_name)

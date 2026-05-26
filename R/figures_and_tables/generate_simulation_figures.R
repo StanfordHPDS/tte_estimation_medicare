@@ -10,8 +10,8 @@ main <- function() {
     dir.create(here("manuscript/images"))
   }
 
-  if (!dir.exists(here("manuscript/supporting_information/images"))) {
-    dir.create(here("manuscript/supporting_information/images"))
+  if (!dir.exists(here("manuscript/appendix/images"))) {
+    dir.create(here("manuscript/appendix/images"))
   }
 
   generate_deci_figures()

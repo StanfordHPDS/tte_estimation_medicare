@@ -7,6 +7,9 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=60G # memory per job
 
+SIM_IMAGE="$GROUP_HOME/containers/upcoding-sim_4.5.3.sif"
+
 echo "Starting run ${SLURM_ARRAY_TASK_ID}"
 
-Rscript simulation_estimates_for_manuscript.R 2 10 ${SLURM_ARRAY_TASK_ID}
+apptainer exec "${SIM_IMAGE}" \
+    Rscript simulation_estimates_for_manuscript.R 2 10 "${SLURM_ARRAY_TASK_ID}"

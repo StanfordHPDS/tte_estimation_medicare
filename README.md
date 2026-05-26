@@ -105,38 +105,11 @@ further details.
 
 ### Setup
 
-As of December 2025, it does not work to use the local renv on Sherlock.
-So, you can get setup to run the slurm script as follows. This setup
-only needs to happen once.
+This setup only needs to happen once.
 
-On Sherlock, run the following commands in this order:
+#### 1. SSH for cloning the repo
 
-    ```         
-    # Launch interactive dev session with 4 CPUs
-
-    $ sh_dev -c 4
-
-    # Load the required modules
-
-    $ ml purge binutils libgit2
-    $ ml R/4.4.2
-    $ ml fribidi/1.0.12 libwebp/1.3.0 freetype/2.9.1 
-
-    # Launch R and install tidyverse
-
-    $ R
-    > install.packages("tidyverse", repos = "http://cran.us.r-project.org", Ncpus=4)
-    > install.packages("here")
-    > install.packages("furrr")
-    > install.packages("remotes")
-    > install.packages("gert", configure.vars = list(USE_SYSTEM_LIBGIT2 = 1))
-    > install.packages("devtools")
-    > library(devtools)
-    > devtools::install_github("oena/khsmisc") # installs Oana's fork of khmisc package
-    > devtools::install_github("StanfordHPDS/upcoding") # install upcoding package
-    ```
-
-Separately, you need to [create a new SSH key for
+You need to [create a new SSH key for
 Sherlock](https://docs.github.com/en/enterprise-cloud@latest/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent?platform=linux)
 (you only need to do the section “Generating a new SSH key”) and [add it
 to your Github
@@ -145,6 +118,23 @@ if you haven’t already. You also need to authorize this SSH key for use
 with Stanford’s single-sign on using the instructions
 [here](https://docs.github.com/en/enterprise-cloud@latest/authentication/authenticating-with-single-sign-on/authorizing-an-ssh-key-for-use-with-single-sign-on).
 Once this is set you should be able to clone this repo to your account.
+
+#### 2. Build the simulation container
+
+The repo includes an Apptainer definition file (`apptainer.def`) and a
+`Makefile` that builds an R 4.5.3 image with all packages from
+`renv.lock`, including the vendored `upcoding`, `khsmisc`, and
+`posterdown` packages in `renv/cellar/`. From the cloned repo root on
+Sherlock, run:
+
+``` bash
+make container
+```
+
+The image is written to `$GROUP_HOME/containers/upcoding-sim_4.5.3.sif`,
+which is where `run_simulations.sh` expects to find it. Re-run
+`make container` whenever `renv.lock` or the contents of `renv/cellar/`
+change.
 
 ### Code
 
@@ -179,7 +169,7 @@ open the project.
 
 ### Code
 
-Generate all figures:
+Generate all figures (besides those from All of Us):
 
 `Rscript generate_simulation_figures.R` . This will generate figures
 from the zipped
@@ -194,8 +184,7 @@ The manuscript is generated from the file:
 ### Output
 
 A PDF of the manuscript can be found at
-`manuscript/upcoding_metrics_manuscript.pdf`. All figures generated are
-in `manuscript/images/`. The supporting information PDF and
-corresponding images are available in
-`manuscript/supporting_information/supporting_information.pdf` and
-`manuscript/supporting_information/images/` respectively.
+`manuscript/main_manuscript_with_figures.pdf`, and a PDF of the appendix
+can be found at `manuscript/appendix/appendix.pdf.` Figures for the main
+manuscript can be found in `manuscript/images`, and figures for the
+appendix can be found in `manuscript/appendix/images/`.
